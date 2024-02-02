@@ -1,0 +1,12 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Game
+metadata:
+  labels:
+    app.kubernetes.io/name: game
+    app.kubernetes.io/instance: game-sample
+    app.kubernetes.io/part-of: kubegame
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubegame
+  name: game-sample
+spec:
+  # TODO(user): Add fields here
