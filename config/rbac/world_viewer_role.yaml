@@ -1,0 +1,27 @@
+# permissions for end users to view worlds.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: world-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kubegame
+    app.kubernetes.io/part-of: kubegame
+    app.kubernetes.io/managed-by: kustomize
+  name: world-viewer-role
+rules:
+- apiGroups:
+  - kubegame.systemcraftsman.com
+  resources:
+  - worlds
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubegame.systemcraftsman.com
+  resources:
+  - worlds/status
+  verbs:
+  - get

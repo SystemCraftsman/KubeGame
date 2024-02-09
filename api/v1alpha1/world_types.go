@@ -20,17 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Database struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+type WorldSpec struct {
+	Game        Game   `json:"game"`
+	Description string `json:"description,omitempty"`
 }
 
-type GameSpec struct {
-	Database Database `json:"database"`
-}
-
-// GameStatus defines the observed state of Game
-type GameStatus struct {
+// WorldStatus defines the observed state of World
+type WorldStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -38,24 +34,24 @@ type GameStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Game is the Schema for the games API
-type Game struct {
+// World is the Schema for the worlds API
+type World struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GameSpec   `json:"spec,omitempty"`
-	Status GameStatus `json:"status,omitempty"`
+	Spec   WorldSpec   `json:"spec,omitempty"`
+	Status WorldStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// GameList contains a list of Game
-type GameList struct {
+// WorldList contains a list of World
+type WorldList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Game `json:"items"`
+	Items           []World `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Game{}, &GameList{})
+	SchemeBuilder.Register(&World{}, &WorldList{})
 }
