@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"gorm.io/gorm/clause"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -67,7 +68,6 @@ func (r *WorldReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	if game.Status.Ready == true {
-
 		var postgresService corev1.Service
 		if err := r.Get(ctx, types.NamespacedName{Name: game.Name + common.PostgresSuffix, Namespace: game.Namespace}, &postgresService); err != nil {
 			if errors.IsNotFound(err) {
@@ -78,16 +78,34 @@ func (r *WorldReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{}, err
 		}
 
-		db, err := persistence.CreateDatabaseConnection(postgresService.Name)
+		db, err := persistence.CreateDatabaseConnection(postgresService.Name, game.Spec.Database.Username,
+			game.Spec.Database.Password)
 		if err != nil {
 			logger.Error(err, "Failed to create database connection")
 			return ctrl.Result{}, err
 		}
 
-		if err := db.Migrator().CreateTable(persistence.World{}); err != nil {
-			logger.Error(err, "Failed to create the World table")
-			return ctrl.Result{}, err
+		if !db.Migrator().HasTable(persistence.World{}) {
+			if err := db.Migrator().CreateTable(persistence.World{}); err != nil {
+				logger.Error(err, "Failed to create the World table")
+				return ctrl.Result{}, err
+			}
 		}
+
+		worldRecord := &persistence.World{
+			Name:        world.Name,
+			Game:        world.Spec.Game,
+			Description: world.Spec.Description,
+		}
+
+		if result := db.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "name"}},
+			DoNothing: true,
+		}).Create(worldRecord); result.Error != nil {
+			logger.Error(err, "Failed to insert the record into the World table")
+			return ctrl.Result{}, result.Error
+		}
+
 	}
 
 	return ctrl.Result{}, nil

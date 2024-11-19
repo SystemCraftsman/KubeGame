@@ -98,7 +98,7 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err := r.Get(ctx, types.NamespacedName{Name: postgresDeployment.Name, Namespace: postgresDeployment.Namespace}, &postgresService); err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Creating a new Service for Postgres Deployment")
-			postgresService = *getPostgresService(&postgresDeployment, &logger)
+			postgresService = *getPostgresService(&game, &logger)
 			if err := ctrl.SetControllerReference(&postgresDeployment, &postgresService, r.Scheme); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -115,16 +115,12 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, nil
 }
 
-// TODO: refactor this
 func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
-	labels := map[string]string{
-		"app":  "postgres",
-		"game": game.Name,
-	}
+	labels := getLabels(game)
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      game.Name + "-postgres",
+			Name:      game.Name + common.PostgresSuffix,
 			Namespace: game.Namespace,
 			Labels:    labels,
 		},
@@ -161,10 +157,6 @@ func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
 									Name:  "POSTGRES_PASSWORD",
 									Value: game.Spec.Database.Password,
 								},
-								{
-									Name:  "POSTGRESQL_ADMIN_PASSWORD",
-									Value: os.Getenv(common.EnvVarDatabaseAdminPassword),
-								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -189,10 +181,8 @@ func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
 	return deployment
 }
 
-func getPostgresService(deployment *appsv1.Deployment, logger *logr.Logger) *corev1.Service {
-	labels := map[string]string{
-		"app": deployment.Name,
-	}
+func getPostgresService(game *v1alpha1.Game, logger *logr.Logger) *corev1.Service {
+	labels := getLabels(game)
 
 	servicePort, err := strconv.Atoi(os.Getenv(common.EnvVarDatabasePort))
 	if err != nil {
@@ -201,8 +191,8 @@ func getPostgresService(deployment *appsv1.Deployment, logger *logr.Logger) *cor
 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      deployment.Name,
-			Namespace: deployment.Namespace,
+			Name:      game.Name + common.PostgresSuffix,
+			Namespace: game.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: labels,
@@ -218,6 +208,13 @@ func getPostgresService(deployment *appsv1.Deployment, logger *logr.Logger) *cor
 	}
 
 	return service
+}
+
+func getLabels(game *v1alpha1.Game) map[string]string {
+	return map[string]string{
+		"app":  game.Name + common.PostgresSuffix,
+		"game": game.Name,
+	}
 }
 
 func int32Ptr(i int32) *int32 {
