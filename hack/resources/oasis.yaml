@@ -1,0 +1,8 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Game
+metadata:
+  name: oasis
+spec:
+  database:
+    username: postgres
+    password: SomeSecretPassword

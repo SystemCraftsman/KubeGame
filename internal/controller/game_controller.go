@@ -18,9 +18,14 @@ package controller
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"os"
+	"strconv"
+	"systemcraftsman.com/kubegame/internal/common"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +37,6 @@ import (
 	"systemcraftsman.com/kubegame/api/v1alpha1"
 )
 
-// GameReconciler reconciles a Game object
 type GameReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -63,7 +67,7 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	// Example of status update logic
+	//Status update
 	game.Status.Ready = true
 	if err := r.Status().Update(ctx, &game); err != nil {
 		logger.Error(err, "Failed to update Game status")
@@ -73,27 +77,45 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// Handle creation or updates for dependent resources, like Services or Deployments
 	// For example, you might want to ensure a Deployment exists for the game
 	// Check if the Deployment already exists
-	var deployment appsv1.Deployment
-	if err := r.Get(ctx, types.NamespacedName{Name: game.Name + "-postgres", Namespace: game.Namespace}, &deployment); err != nil {
+	var postgresDeployment appsv1.Deployment
+	if err := r.Get(ctx, types.NamespacedName{Name: game.Name + common.PostgresSuffix, Namespace: game.Namespace}, &postgresDeployment); err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Creating a new Deployment for Game")
-			deployment = *getPostgresDeployment(&game)
-			if err := ctrl.SetControllerReference(&game, &deployment, r.Scheme); err != nil {
+			postgresDeployment = *getPostgresDeployment(&game)
+			if err := ctrl.SetControllerReference(&game, &postgresDeployment, r.Scheme); err != nil {
 				return ctrl.Result{}, err
 			}
-			err := r.Create(ctx, &deployment)
-			if err != nil {
+			if err := r.Create(ctx, &postgresDeployment); err != nil {
 				return ctrl.Result{}, err
 			}
+		} else {
+			logger.Error(err, "Failed to get Deployment for Game")
+			return ctrl.Result{}, err
 		}
-		logger.Error(err, "Failed to get Deployment for Game")
-		return ctrl.Result{}, err
+	}
+
+	var postgresService corev1.Service
+	if err := r.Get(ctx, types.NamespacedName{Name: postgresDeployment.Name, Namespace: postgresDeployment.Namespace}, &postgresService); err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("Creating a new Service for Postgres Deployment")
+			postgresService = *getPostgresService(&postgresDeployment, &logger)
+			if err := ctrl.SetControllerReference(&postgresDeployment, &postgresService, r.Scheme); err != nil {
+				return ctrl.Result{}, err
+			}
+			if err := r.Create(ctx, &postgresService); err != nil {
+				return ctrl.Result{}, err
+			}
+		} else {
+			logger.Error(err, "Failed to get Service for Postgres Deployment")
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Return success if nothing needs to be done
 	return ctrl.Result{}, nil
 }
 
+// TODO: refactor this
 func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
 	labels := map[string]string{
 		"app":  "postgres",
@@ -139,6 +161,10 @@ func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
 									Name:  "POSTGRES_PASSWORD",
 									Value: game.Spec.Database.Password,
 								},
+								{
+									Name:  "POSTGRESQL_ADMIN_PASSWORD",
+									Value: os.Getenv(common.EnvVarDatabaseAdminPassword),
+								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -163,11 +189,41 @@ func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
 	return deployment
 }
 
+func getPostgresService(deployment *appsv1.Deployment, logger *logr.Logger) *corev1.Service {
+	labels := map[string]string{
+		"app": deployment.Name,
+	}
+
+	servicePort, err := strconv.Atoi(os.Getenv(common.EnvVarDatabasePort))
+	if err != nil {
+		logger.Error(err, "Error converting string to int for Service port")
+	}
+
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deployment.Name,
+			Namespace: deployment.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Protocol:   corev1.ProtocolTCP,
+					Port:       int32(servicePort),
+					TargetPort: intstr.FromInt(servicePort),
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+
+	return service
+}
+
 func int32Ptr(i int32) *int32 {
 	return &i
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *GameReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Game{}).

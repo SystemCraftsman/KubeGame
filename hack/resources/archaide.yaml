@@ -1,0 +1,7 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: World
+metadata:
+  name: archaide
+spec:
+  game: oasis
+  description: Archaide is a planet in the Oasis with a barren surface comprised of vector graphics (an old style of video game graphics used in the 80's to give a three dimensional effect to a game). The planet is in perpetual darkness and some of the only surface features are a large volcano (which stays to the north no matter where you are) and multiple entrances to the inner parts of the planet.

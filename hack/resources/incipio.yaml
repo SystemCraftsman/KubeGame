@@ -1,0 +1,7 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: World
+metadata:
+  name: incipio
+spec:
+  game: oasis
+  description: Incipio is a planet in the OASIS created by Gregarious Simulation Systems to serve as the primary location of the OASIS where newly created avatars spawn at the time of their creation.

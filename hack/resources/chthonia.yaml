@@ -1,0 +1,7 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: World
+metadata:
+  name: chthonia
+spec:
+  game: oasis
+  description: Chthonia is a planet in the OASIS coded by James Halliday himself. Situated in Sector 10, Chthonia is a re-creation of the fantasy world James Halliday created originally for his high-school Dungeons and Dragons campaigns before moving on to also use the world in many of his early video games.

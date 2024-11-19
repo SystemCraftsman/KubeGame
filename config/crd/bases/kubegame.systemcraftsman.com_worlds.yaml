@@ -36,49 +36,7 @@ spec:
               description:
                 type: string
               game:
-                description: Game is the Schema for the games API
-                properties:
-                  apiVersion:
-                    description: 'APIVersion defines the versioned schema of this
-                      representation of an object. Servers should convert recognized
-                      schemas to the latest internal value, and may reject unrecognized
-                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-                    type: string
-                  kind:
-                    description: 'Kind is a string value representing the REST resource
-                      this object represents. Servers may infer this from the endpoint
-                      the client submits requests to. Cannot be updated. In CamelCase.
-                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                    type: string
-                  metadata:
-                    type: object
-                  spec:
-                    properties:
-                      database:
-                        properties:
-                          password:
-                            type: string
-                          username:
-                            type: string
-                        required:
-                        - password
-                        - username
-                        type: object
-                    required:
-                    - database
-                    type: object
-                  status:
-                    description: GameStatus defines the observed state of Game
-                    properties:
-                      message:
-                        type: string
-                      ready:
-                        type: boolean
-                    required:
-                    - message
-                    - ready
-                    type: object
-                type: object
+                type: string
             required:
             - game
             type: object

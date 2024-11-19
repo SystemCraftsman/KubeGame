@@ -21,7 +21,7 @@ import (
 )
 
 type WorldSpec struct {
-	Game        Game   `json:"game"`
+	Game        string `json:"game"`
 	Description string `json:"description,omitempty"`
 }
 

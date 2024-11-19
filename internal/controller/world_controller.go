@@ -18,16 +18,20 @@ package controller
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"systemcraftsman.com/kubegame/internal/common"
+	"systemcraftsman.com/kubegame/internal/persistence"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	kubegamesystemcraftsmancomv1alpha1 "systemcraftsman.com/kubegame/api/v1alpha1"
+	v1alpha1 "systemcraftsman.com/kubegame/api/v1alpha1"
 )
 
-// WorldReconciler reconciles a World object
 type WorldReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -37,26 +41,60 @@ type WorldReconciler struct {
 //+kubebuilder:rbac:groups=kubegame.systemcraftsman.com,resources=worlds/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kubegame.systemcraftsman.com,resources=worlds/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the World object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *WorldReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// Fetch the World resource
+	var world v1alpha1.World
+	if err := r.Get(ctx, req.NamespacedName, &world); err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("World resource not found, might be deleted")
+			return ctrl.Result{}, nil
+		}
+		logger.Error(err, "Failed to get World resource")
+		return ctrl.Result{}, err
+	}
+
+	// Fetch the Game resource
+	var game v1alpha1.Game
+	if err := r.Get(ctx, types.NamespacedName{Name: world.Spec.Game, Namespace: world.Namespace}, &game); err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("Game resource not found, might be deleted")
+			return ctrl.Result{}, nil
+		}
+		logger.Error(err, "Failed to get Game resource")
+		return ctrl.Result{}, err
+	}
+
+	if game.Status.Ready == true {
+
+		var postgresService corev1.Service
+		if err := r.Get(ctx, types.NamespacedName{Name: game.Name + common.PostgresSuffix, Namespace: game.Namespace}, &postgresService); err != nil {
+			if errors.IsNotFound(err) {
+				logger.Info("Postgres service not found, might be deleted")
+				return ctrl.Result{}, nil
+			}
+			logger.Error(err, "Failed to get the postgres service")
+			return ctrl.Result{}, err
+		}
+
+		db, err := persistence.CreateDatabaseConnection(postgresService.Name)
+		if err != nil {
+			logger.Error(err, "Failed to create database connection")
+			return ctrl.Result{}, err
+		}
+
+		if err := db.Migrator().CreateTable(persistence.World{}); err != nil {
+			logger.Error(err, "Failed to create the World table")
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *WorldReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&kubegamesystemcraftsmancomv1alpha1.World{}).
+		For(&v1alpha1.World{}).
 		Complete(r)
 }
