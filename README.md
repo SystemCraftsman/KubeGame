@@ -1,6 +1,78 @@
-# KubeGame
+# Developing Kubernetes Operators with Golang and Operator SDK - GoKonf 2023-2
 
-This is a WIP gamification operator which is initialized by Operator SDK.
-The structure is pretty much the same as a project that is initialized by Kubebuilder.
+Demo for the Developing Kubernetes Operators with Golang and Operator SDK talk at GoKonf 2023-2
 
-If you are familiar with gamification, Go and operators, please checkout the [issues](https://github.com/SystemCraftsman/KubeGame/issues) in order to contribute.
+## Architecture
+
+![Architecture]()
+
+## Examining the Operator
+
+* Examine the ./api
+* Examine the reconcilers
+* Examine the custom resources and their specs
+* Examine the .env
+
+## Rough Steps
+
+Make sure a K8S instance is running on your local.
+
+Run the operator on your local.
+
+Then run the following commands one by one:
+
+```shell
+k get pods -w
+```
+
+```shell
+k apply -f examples/readyPlayerOne/oasis.yaml 
+```
+
+```shell
+k get games
+```
+
+```shell
+k get games oasis -o yaml
+```
+
+```shell
+k exec -it oasis-postgres-956694c99-7gnhc -- bash
+```
+
+```shell
+psql -U postgres
+```
+
+```postgresql
+\c
+```
+
+```postgresql
+\dt
+```
+
+```shell
+k apply -f examples/readyPlayerOne/incipio.yaml
+```
+
+```postgresql
+\dt
+```
+
+```postgresql
+select * from world;
+```
+
+```shell
+k apply -f examples/readyPlayerOne/
+```
+
+```postgresql
+select * from world;
+```
+
+```shell
+k delete games oasis
+```
