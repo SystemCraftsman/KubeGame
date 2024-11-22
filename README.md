@@ -4,7 +4,7 @@ Demo for the Developing Kubernetes Operators with Golang and Operator SDK talk a
 
 ## Architecture
 
-![Architecture]()
+![Architecture](https://github.com/user-attachments/assets/c518142b-f034-4f24-8471-ee1233154206)
 
 ## Examining the Operator
 
