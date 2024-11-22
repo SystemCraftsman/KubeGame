@@ -1,0 +1,7 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: World
+metadata:
+  name: middle-earth
+spec:
+  game: oasis
+  description: Middle Earth is the world created by J.R.R Tolkien in 1937 with the release of The Hobbit. Middle Earth is both featured in Ready Player One, and Ready Player Two.
