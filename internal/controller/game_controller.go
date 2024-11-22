@@ -26,7 +26,6 @@ import (
 	"os"
 	"strconv"
 	"systemcraftsman.com/kubegame/internal/common"
-	"systemcraftsman.com/kubegame/internal/common/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -126,7 +125,7 @@ func (r *GameReconciler) getPostgresDeployment(game *v1alpha1.Game) *appsv1.Depl
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: utils.Int32Ptr(1),
+			Replicas: common.Int32Ptr(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
