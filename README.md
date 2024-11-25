@@ -1,6 +1,6 @@
-# Developing Kubernetes Operators with Golang and Operator SDK - GoKonf 2023-2
+# Developing Kubernetes Operators with Golang and Operator SDK - GoKonf 2024-2
 
-Demo for the Developing Kubernetes Operators with Golang and Operator SDK talk at GoKonf 2023-2
+Demo for the Developing Kubernetes Operators with Golang and Operator SDK talk at GoKonf 2024-2
 
 ## Architecture
 
