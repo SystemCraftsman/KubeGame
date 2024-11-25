@@ -26,7 +26,7 @@ k get pods -w
 ```
 
 ```shell
-k apply -f examples/readyPlayerOne/oasis.yaml 
+k apply -f hack/resources/oasis.yaml 
 ```
 
 ```shell
@@ -54,7 +54,7 @@ psql -U postgres
 ```
 
 ```shell
-k apply -f examples/readyPlayerOne/incipio.yaml
+k apply -f hack/resources/incipio.yaml
 ```
 
 ```postgresql
@@ -66,7 +66,7 @@ select * from world;
 ```
 
 ```shell
-k apply -f examples/readyPlayerOne/
+k apply -f hack/resources/
 ```
 
 ```postgresql
