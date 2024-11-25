@@ -81,7 +81,7 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err := r.Get(ctx, types.NamespacedName{Name: game.Name + common.PostgresSuffix, Namespace: game.Namespace}, &postgresDeployment); err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Creating a new Deployment for Game")
-			postgresDeployment = *getPostgresDeployment(&game)
+			postgresDeployment = *r.getPostgresDeployment(&game)
 			if err := ctrl.SetControllerReference(&game, &postgresDeployment, r.Scheme); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -98,7 +98,7 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err := r.Get(ctx, types.NamespacedName{Name: postgresDeployment.Name, Namespace: postgresDeployment.Namespace}, &postgresService); err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Creating a new Service for Postgres Deployment")
-			postgresService = *getPostgresService(&game, &logger)
+			postgresService = *r.getPostgresService(&game, &logger)
 			if err := ctrl.SetControllerReference(&postgresDeployment, &postgresService, r.Scheme); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -115,8 +115,8 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, nil
 }
 
-func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
-	labels := getLabels(game)
+func (r *GameReconciler) getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
+	labels := r.getLabels(game)
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -125,7 +125,7 @@ func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: int32Ptr(1), // Define how many replicas you need
+			Replicas: common.Int32Ptr(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -181,8 +181,8 @@ func getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
 	return deployment
 }
 
-func getPostgresService(game *v1alpha1.Game, logger *logr.Logger) *corev1.Service {
-	labels := getLabels(game)
+func (r *GameReconciler) getPostgresService(game *v1alpha1.Game, logger *logr.Logger) *corev1.Service {
+	labels := r.getLabels(game)
 
 	servicePort, err := strconv.Atoi(os.Getenv(common.EnvVarDatabasePort))
 	if err != nil {
@@ -210,15 +210,11 @@ func getPostgresService(game *v1alpha1.Game, logger *logr.Logger) *corev1.Servic
 	return service
 }
 
-func getLabels(game *v1alpha1.Game) map[string]string {
+func (r *GameReconciler) getLabels(game *v1alpha1.Game) map[string]string {
 	return map[string]string{
 		"app":  game.Name + common.PostgresSuffix,
 		"game": game.Name,
 	}
-}
-
-func int32Ptr(i int32) *int32 {
-	return &i
 }
 
 func (r *GameReconciler) SetupWithManager(mgr ctrl.Manager) error {
