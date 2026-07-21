@@ -51,7 +51,7 @@ endif
 OPERATOR_SDK_VERSION ?= v1.42.3
 
 # Image URL to use all building/pushing image targets
-IMG ?= quay.io/systemcraftsman/kubegame
+IMG ?= ghcr.io/systemcraftsman/kubegame
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.32.0
 
@@ -103,6 +103,10 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+.PHONY: lint
+lint: ## Run golangci-lint against code.
+	golangci-lint run ./...
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -142,12 +146,12 @@ run: manifests generate fmt vet ## Run a controller from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${IMG}:${VERSION} .
-	$(CONTAINER_TOOL) tag ${IMG}:${VERSION} ${IMG}:latest
+	$(CONTAINER_TOOL) build -t ${IMG}:v${VERSION} .
+	$(CONTAINER_TOOL) tag ${IMG}:v${VERSION} ${IMG}:latest
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	$(CONTAINER_TOOL) push ${IMG}:${VERSION}
+	$(CONTAINER_TOOL) push ${IMG}:v${VERSION}
 	$(CONTAINER_TOOL) push ${IMG}:latest
 
 # PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple
