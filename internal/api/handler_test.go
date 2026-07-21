@@ -82,6 +82,12 @@ func seedBlueprint() {
 	testDB.Create(&persistence.AttributeType{AvatarName: "test-avatar", Name: "intelligence", ValueType: "int"})
 	testDB.Create(&persistence.InventoryType{AvatarName: "test-avatar", Name: "Weapon", Category: "Equipment"})
 	testDB.Create(&persistence.AchievementType{AvatarName: "test-avatar", Name: "First Blood", Description: "Win first battle"})
+	testDB.Create(&persistence.CustomizationTypeRecord{AvatarName: "test-avatar", Name: "Race"})
+	testDB.Create(&persistence.CustomizationTypeRecord{AvatarName: "test-avatar", Name: "Class"})
+	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Race", Value: "Human"})
+	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Race", Value: "Elf"})
+	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Class", Value: "Warrior"})
+	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Class", Value: "Mage"})
 }
 
 func newTestHandler() *Handler {
@@ -331,6 +337,93 @@ func TestShorthandPathDefaultsToDefaultNamespace(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateAvatarInstanceWithCustomizations(t *testing.T) {
+	mux := newTestMux()
+
+	body := AvatarInstanceRequest{
+		Name:       "custom-avatar",
+		AvatarType: "test-avatar",
+		Customizations: map[string]string{
+			"Race":  "Elf",
+			"Class": "Mage",
+		},
+	}
+
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp AvatarInstanceResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if resp.Customizations["Race"] != "Elf" {
+		t.Errorf("expected Race=Elf, got %s", resp.Customizations["Race"])
+	}
+	if resp.Customizations["Class"] != "Mage" {
+		t.Errorf("expected Class=Mage, got %s", resp.Customizations["Class"])
+	}
+
+	t.Cleanup(func() {
+		var instance persistence.AvatarInstance
+		testDB.Where("name = ?", "custom-avatar").First(&instance)
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceCustomization{})
+		testDB.Delete(&instance)
+	})
+}
+
+func TestCreateAvatarInstanceInvalidCustomizationType(t *testing.T) {
+	mux := newTestMux()
+
+	body := AvatarInstanceRequest{
+		Name:       "invalid-cust-type",
+		AvatarType: "test-avatar",
+		Customizations: map[string]string{
+			"Alignment": "Chaotic Good",
+		},
+	}
+
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateAvatarInstanceInvalidCustomizationOption(t *testing.T) {
+	mux := newTestMux()
+
+	body := AvatarInstanceRequest{
+		Name:       "invalid-cust-opt",
+		AvatarType: "test-avatar",
+		Customizations: map[string]string{
+			"Race": "Dragon",
+		},
+	}
+
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
 	}
 }
 

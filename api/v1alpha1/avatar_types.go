@@ -35,13 +35,19 @@ type AchievementType struct {
 	Description string `json:"description,omitempty"`
 }
 
+type CustomizationType struct {
+	Name    string   `json:"name"`
+	Options []string `json:"options"`
+}
+
 type AvatarSpec struct {
-	Game             string            `json:"game"`
-	Type             string            `json:"type"`
-	Description      string            `json:"description,omitempty"`
-	AttributeTypes   []AttributeType   `json:"attributeTypes,omitempty"`
-	InventoryTypes   []InventoryType   `json:"inventoryTypes,omitempty"`
-	AchievementTypes []AchievementType `json:"achievementTypes,omitempty"`
+	Game               string              `json:"game"`
+	Type               string              `json:"type"`
+	Description        string              `json:"description,omitempty"`
+	AttributeTypes     []AttributeType     `json:"attributeTypes,omitempty"`
+	InventoryTypes     []InventoryType     `json:"inventoryTypes,omitempty"`
+	AchievementTypes   []AchievementType   `json:"achievementTypes,omitempty"`
+	CustomizationTypes []CustomizationType `json:"customizationTypes,omitempty"`
 }
 
 // AvatarStatus defines the observed state of Avatar

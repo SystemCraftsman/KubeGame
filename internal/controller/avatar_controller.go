@@ -71,6 +71,8 @@ func (r *AvatarReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if game.Status.Ready {
 				db, err := getGameDB(ctx, r.Client, &game)
 				if err == nil {
+					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.CustomizationOption{})
+					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.CustomizationTypeRecord{})
 					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.AchievementType{})
 					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.InventoryType{})
 					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.AttributeType{})
@@ -158,6 +160,29 @@ func (r *AvatarReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(record); result.Error != nil {
 			logger.Error(result.Error, "Failed to insert achievement type record")
 			return ctrl.Result{}, result.Error
+		}
+	}
+
+	for _, ct := range avatar.Spec.CustomizationTypes {
+		record := &persistence.CustomizationTypeRecord{
+			AvatarName: avatar.Name,
+			Name:       ct.Name,
+		}
+		if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(record); result.Error != nil {
+			logger.Error(result.Error, "Failed to insert customization type record")
+			return ctrl.Result{}, result.Error
+		}
+
+		for _, opt := range ct.Options {
+			optRecord := &persistence.CustomizationOption{
+				CustomizationName: ct.Name,
+				AvatarName:        avatar.Name,
+				Value:             opt,
+			}
+			if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(optRecord); result.Error != nil {
+				logger.Error(result.Error, "Failed to insert customization option record")
+				return ctrl.Result{}, result.Error
+			}
 		}
 	}
 

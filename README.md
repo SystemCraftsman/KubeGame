@@ -28,7 +28,7 @@ graph TD
 
 ### Avatar as a Blueprint
 
-The Avatar CRD is a generic scaffold, not a concrete avatar. It defines **what types of attributes, inventory, and achievements** an avatar can have. Actual avatar instances are created via the REST API and stored in the database.
+The Avatar CRD is a generic scaffold, not a concrete avatar. It defines **what types of attributes, inventory, achievements, and customizations** an avatar can have. Actual avatar instances are created via the REST API and stored in the database.
 
 ```yaml
 apiVersion: kubegame.systemcraftsman.com/v1alpha1
@@ -51,6 +51,11 @@ spec:
   achievementTypes:
     - name: "Copper Key"
       description: "Found the first key."
+  customizationTypes:
+    - name: "Race"
+      options: ["Human", "Elf", "Orc", "Dwarf"]
+    - name: "Class"
+      options: ["Warrior", "Mage", "Rogue", "Cleric"]
 ```
 
 ### Database Credentials
@@ -93,7 +98,7 @@ The API server runs on port `8082` alongside the operator.
 
 Shorthand paths without `/namespaces/{ns}` default to the `default` namespace.
 
-Instance creation validates against the avatar blueprint: attributes, inventory categories, and achievements must be defined in the corresponding Avatar CRD.
+Instance creation validates against the avatar blueprint: attributes, inventory categories, achievements, and customizations must be defined in the corresponding Avatar CRD.
 
 ## Quick Start
 
@@ -147,7 +152,7 @@ KubeGame aims to implement all [35 Gamification Mechanics](https://www.epicwinbl
 - [x] World
 - [x] Avatar (blueprint + instance API)
 - [x] Area
-- [ ] Customization
+- [x] Customization
 - [ ] Equipment, Vanity/Elite Items, Power-ups (ItemCatalog CRD)
 - [ ] Currency, Trading
 - [ ] Skills/Traits, XP Points (SkillTree CRD)

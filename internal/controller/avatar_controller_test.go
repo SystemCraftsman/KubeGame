@@ -72,6 +72,10 @@ var _ = Describe("AvatarReconciler", func() {
 					AchievementTypes: []kubegamev1alpha1.AchievementType{
 						{Name: "First Blood", Description: "Win your first battle"},
 					},
+					CustomizationTypes: []kubegamev1alpha1.CustomizationType{
+						{Name: "Race", Options: []string{"Human", "Elf", "Orc"}},
+						{Name: "Class", Options: []string{"Warrior", "Mage"}},
+					},
 				},
 			}
 			Expect(k8sClient.Create(ctx, avatar)).To(Succeed())
@@ -149,6 +153,34 @@ var _ = Describe("AvatarReconciler", func() {
 				db.Where("avatar_name = ?", avatar.Name).Find(&records)
 				return len(records)
 			}, timeout, interval).Should(Equal(1))
+		})
+
+		It("should persist customization types in PostgreSQL", func() {
+			serviceName := game.Name + "-postgres"
+
+			Eventually(func() int {
+				db, err := persistence.GetOrCreateConnection(serviceName, testDBUser, testDBPassword)
+				if err != nil {
+					return 0
+				}
+				var records []persistence.CustomizationTypeRecord
+				db.Where("avatar_name = ?", avatar.Name).Find(&records)
+				return len(records)
+			}, timeout, interval).Should(Equal(2))
+		})
+
+		It("should persist customization options in PostgreSQL", func() {
+			serviceName := game.Name + "-postgres"
+
+			Eventually(func() int {
+				db, err := persistence.GetOrCreateConnection(serviceName, testDBUser, testDBPassword)
+				if err != nil {
+					return 0
+				}
+				var records []persistence.CustomizationOption
+				db.Where("avatar_name = ?", avatar.Name).Find(&records)
+				return len(records)
+			}, timeout, interval).Should(Equal(5))
 		})
 	})
 })

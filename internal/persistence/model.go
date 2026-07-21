@@ -62,6 +62,26 @@ type AvatarInstanceAchievement struct {
 	Name             string `gorm:"type:VARCHAR(100)"`
 }
 
+type CustomizationTypeRecord struct {
+	ID         uint   `gorm:"primaryKey;autoIncrement"`
+	AvatarName string `gorm:"type:VARCHAR(50);index"`
+	Name       string `gorm:"type:VARCHAR(100)"`
+}
+
+type CustomizationOption struct {
+	ID                uint   `gorm:"primaryKey;autoIncrement"`
+	CustomizationName string `gorm:"type:VARCHAR(100);index"`
+	AvatarName        string `gorm:"type:VARCHAR(50);index"`
+	Value             string `gorm:"type:VARCHAR(100)"`
+}
+
+type AvatarInstanceCustomization struct {
+	ID               uint   `gorm:"primaryKey;autoIncrement"`
+	AvatarInstanceID uint   `gorm:"index"`
+	Name             string `gorm:"type:VARCHAR(100)"`
+	Value            string `gorm:"type:VARCHAR(100)"`
+}
+
 type Area struct {
 	Name        string `gorm:"type:VARCHAR(50);primaryKey"`
 	Game        string `gorm:"type:VARCHAR(50)"`

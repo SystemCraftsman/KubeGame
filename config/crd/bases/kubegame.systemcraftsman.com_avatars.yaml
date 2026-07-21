@@ -61,6 +61,20 @@ spec:
                   - valueType
                   type: object
                 type: array
+              customizationTypes:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    options:
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - name
+                  - options
+                  type: object
+                type: array
               description:
                 type: string
               game:

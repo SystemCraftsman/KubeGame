@@ -18,10 +18,13 @@ func AvatarModels() []interface{} {
 		&AttributeType{},
 		&InventoryType{},
 		&AchievementType{},
+		&CustomizationTypeRecord{},
+		&CustomizationOption{},
 		&AvatarInstance{},
 		&AvatarInstanceAttribute{},
 		&AvatarInstanceInventoryItem{},
 		&AvatarInstanceAchievement{},
+		&AvatarInstanceCustomization{},
 	}
 }
 

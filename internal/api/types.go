@@ -7,21 +7,23 @@ type InventoryItem struct {
 }
 
 type AvatarInstanceRequest struct {
-	Name         string            `json:"name"`
-	AvatarType   string            `json:"avatarType"`
-	Attributes   map[string]string `json:"attributes,omitempty"`
-	Inventory    []InventoryItem   `json:"inventory,omitempty"`
-	Achievements []string          `json:"achievements,omitempty"`
+	Name           string            `json:"name"`
+	AvatarType     string            `json:"avatarType"`
+	Attributes     map[string]string `json:"attributes,omitempty"`
+	Inventory      []InventoryItem   `json:"inventory,omitempty"`
+	Achievements   []string          `json:"achievements,omitempty"`
+	Customizations map[string]string `json:"customizations,omitempty"`
 }
 
 type AvatarInstanceResponse struct {
-	ID           uint              `json:"id"`
-	Name         string            `json:"name"`
-	AvatarType   string            `json:"avatarType"`
-	Game         string            `json:"game"`
-	Attributes   map[string]string `json:"attributes,omitempty"`
-	Inventory    []InventoryItem   `json:"inventory,omitempty"`
-	Achievements []string          `json:"achievements,omitempty"`
+	ID             uint              `json:"id"`
+	Name           string            `json:"name"`
+	AvatarType     string            `json:"avatarType"`
+	Game           string            `json:"game"`
+	Attributes     map[string]string `json:"attributes,omitempty"`
+	Inventory      []InventoryItem   `json:"inventory,omitempty"`
+	Achievements   []string          `json:"achievements,omitempty"`
+	Customizations map[string]string `json:"customizations,omitempty"`
 }
 
 type WorldResponse struct {

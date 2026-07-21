@@ -59,7 +59,8 @@ create_avatar "parzival" '{
     {"name": "Sword of the Ba Heer", "type": "Equipment", "quantity": 1},
     {"name": "Quarter", "type": "Currency", "quantity": 1}
   ],
-  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"]
+  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
+  "customizations": {"Race": "Human", "Gender": "Male", "Class": "Gunter"}
 }'
 
 # Art3mis (Samantha Cook)
@@ -82,7 +83,8 @@ create_avatar "art3mis" '{
     {"name": "Black Tiger Sword", "type": "Equipment", "quantity": 1},
     {"name": "Scale Mail", "type": "Equipment", "quantity": 1}
   ],
-  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"]
+  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
+  "customizations": {"Race": "Human", "Gender": "Female", "Class": "Gunter"}
 }'
 
 # Aech (Helen Harris)
@@ -105,7 +107,8 @@ create_avatar "aech" '{
     {"name": "Battleaxe", "type": "Equipment", "quantity": 1},
     {"name": "Heavy Plate Armor", "type": "Equipment", "quantity": 1}
   ],
-  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"]
+  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
+  "customizations": {"Race": "Orc", "Gender": "Male", "Class": "Warrior"}
 }'
 
 # Daito (Toshiro Yoshiaki)
@@ -128,7 +131,8 @@ create_avatar "daito" '{
     {"name": "Masamune Katana", "type": "Equipment", "quantity": 1},
     {"name": "Samurai Yoroi", "type": "Equipment", "quantity": 1}
   ],
-  "achievements": ["Copper Key", "Jade Key", "Crystal Key"]
+  "achievements": ["Copper Key", "Jade Key", "Crystal Key"],
+  "customizations": {"Race": "Human", "Gender": "Male", "Class": "Warrior"}
 }'
 
 # Shoto (Akihide Karatsu)
@@ -151,7 +155,8 @@ create_avatar "shoto" '{
     {"name": "Wakizashi", "type": "Equipment", "quantity": 1},
     {"name": "Ninja Garb", "type": "Equipment", "quantity": 1}
   ],
-  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"]
+  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
+  "customizations": {"Race": "Human", "Gender": "Male", "Class": "Rogue"}
 }'
 
 # Anorak (James Halliday)
@@ -174,7 +179,8 @@ create_avatar "anorak" '{
     {"name": "Catalyst", "type": "Special", "quantity": 1},
     {"name": "Unlimited Coins", "type": "Currency", "quantity": 999999}
   ],
-  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"]
+  "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
+  "customizations": {"Race": "Human", "Gender": "Male", "Class": "Mage"}
 }'
 
 # i-r0k
@@ -197,7 +203,8 @@ create_avatar "i-r0k" '{
     {"name": "Skull Armor", "type": "Equipment", "quantity": 1},
     {"name": "Plasma Rifle", "type": "Equipment", "quantity": 1}
   ],
-  "achievements": []
+  "achievements": [],
+  "customizations": {"Race": "Android", "Gender": "Male", "Class": "Rogue"}
 }'
 
 # Sorrento / IOI-655321
@@ -221,7 +228,8 @@ create_avatar "ioi-655321" '{
     {"name": "IOI Railgun", "type": "Equipment", "quantity": 1},
     {"name": "Corporate Funds", "type": "Currency", "quantity": 500000}
   ],
-  "achievements": []
+  "achievements": [],
+  "customizations": {"Race": "Human", "Gender": "Male", "Class": "Warrior"}
 }'
 
 echo ""

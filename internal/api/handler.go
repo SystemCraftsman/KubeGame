@@ -94,6 +94,18 @@ func (h *Handler) CreateAvatarInstance(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	for name, value := range req.Customizations {
+		cust := &persistence.AvatarInstanceCustomization{
+			AvatarInstanceID: instance.ID,
+			Name:             name,
+			Value:            value,
+		}
+		if result := db.Create(cust); result.Error != nil {
+			writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to create customization: %v", result.Error))
+			return
+		}
+	}
+
 	resp := buildInstanceResponse(db, instance)
 	writeJSON(w, http.StatusCreated, resp)
 }
@@ -172,6 +184,7 @@ func (h *Handler) DeleteAvatarInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	db.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceCustomization{})
 	db.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceAttribute{})
 	db.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceInventoryItem{})
 	db.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceAchievement{})
@@ -345,6 +358,15 @@ func buildInstanceResponse(db *gorm.DB, instance *persistence.AvatarInstance) *A
 	db.Where("avatar_instance_id = ?", instance.ID).Find(&achievements)
 	for _, a := range achievements {
 		resp.Achievements = append(resp.Achievements, a.Name)
+	}
+
+	var customizations []persistence.AvatarInstanceCustomization
+	db.Where("avatar_instance_id = ?", instance.ID).Find(&customizations)
+	if len(customizations) > 0 {
+		resp.Customizations = make(map[string]string)
+		for _, c := range customizations {
+			resp.Customizations[c.Name] = c.Value
+		}
 	}
 
 	return resp

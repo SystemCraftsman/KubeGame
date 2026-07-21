@@ -34,6 +34,13 @@ spec:
       category: "Special"
     - name: "Coin"
       category: "Currency"
+  customizationTypes:
+    - name: "Race"
+      options: ["Human", "Elf", "Orc", "Dwarf", "Halfling", "Android"]
+    - name: "Gender"
+      options: ["Male", "Female", "Non-binary"]
+    - name: "Class"
+      options: ["Warrior", "Mage", "Rogue", "Cleric", "Ranger", "Gunter"]
   achievementTypes:
     - name: "Copper Key"
       description: "Found the first key in Halliday's Easter Egg Hunt."
