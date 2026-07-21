@@ -88,6 +88,10 @@ func seedBlueprint() {
 	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Race", Value: "Elf"})
 	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Class", Value: "Warrior"})
 	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Class", Value: "Mage"})
+	testDB.Create(&persistence.ItemDefinition{Name: "Iron Sword", Game: "test-game", Category: "Equipment", Rarity: "Common", Stackable: false})
+	testDB.Create(&persistence.ItemDefinition{Name: "Health Potion", Game: "test-game", Category: "Powerup", Rarity: "Common", Stackable: true, MaxStack: 10, Duration: 300})
+	testDB.Create(&persistence.ItemDefinition{Name: "Golden Cape", Game: "test-game", Category: "Vanity", Rarity: "Rare", Stackable: false})
+	testDB.Create(&persistence.ItemEffectRecord{ItemName: "Iron Sword", Game: "test-game", Attribute: "strength", Modifier: "+5"})
 }
 
 func newTestHandler() *Handler {
@@ -106,6 +110,13 @@ func newTestMux() *http.ServeMux {
 	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars", h.ListAvatarInstances)
 	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}", h.GetAvatarInstance)
 	mux.HandleFunc("DELETE /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}", h.DeleteAvatarInstance)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/items", h.ListItems)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/items/{name}", h.GetItem)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/inventory", h.GrantItem)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/equip", h.EquipItem)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/unequip", h.UnequipItem)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/powerups/activate", h.ActivatePowerup)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/powerups", h.ListActivePowerups)
 	mux.HandleFunc("POST /api/v1/games/{game}/avatars", h.CreateAvatarInstance)
 	mux.HandleFunc("GET /api/v1/games/{game}/avatars", h.ListAvatarInstances)
 	mux.HandleFunc("GET /api/v1/games/{game}/avatars/{name}", h.GetAvatarInstance)
@@ -424,6 +435,219 @@ func TestCreateAvatarInstanceInvalidCustomizationOption(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestListItems(t *testing.T) {
+	mux := newTestMux()
+
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/default/games/test-game/items", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp []ItemResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if len(resp) < 3 {
+		t.Errorf("expected at least 3 items, got %d", len(resp))
+	}
+}
+
+func TestGetItem(t *testing.T) {
+	mux := newTestMux()
+
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/default/games/test-game/items/Iron Sword", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp ItemResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if resp.Name != "Iron Sword" {
+		t.Errorf("expected Iron Sword, got %s", resp.Name)
+	}
+	if resp.Effects["strength"] != "+5" {
+		t.Errorf("expected strength +5, got %s", resp.Effects["strength"])
+	}
+}
+
+func TestGrantItem(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "grant-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	t.Cleanup(func() {
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceInventoryItem{})
+		testDB.Delete(instance)
+	})
+
+	body := GrantItemRequest{ItemName: "Iron Sword", Quantity: 1}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/grant-test/inventory", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp AvatarInstanceResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	found := false
+	for _, item := range resp.Inventory {
+		if item.Name == "Iron Sword" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected Iron Sword in inventory")
+	}
+}
+
+func TestGrantItemNotInCatalog(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "grant-invalid-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	t.Cleanup(func() {
+		testDB.Delete(instance)
+	})
+
+	body := GrantItemRequest{ItemName: "Nonexistent Item", Quantity: 1}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/grant-invalid-test/inventory", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestEquipAndUnequipItem(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "equip-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "Iron Sword", Type: "Equipment", Quantity: 1}
+	testDB.Create(inv)
+	t.Cleanup(func() {
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceInventoryItem{})
+		testDB.Delete(instance)
+	})
+
+	equipBody := EquipRequest{ItemName: "Iron Sword"}
+	b, _ := json.Marshal(equipBody)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/equip-test/equip", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("equip: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp AvatarInstanceResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	for _, item := range resp.Inventory {
+		if item.Name == "Iron Sword" && !item.Equipped {
+			t.Error("expected Iron Sword to be equipped")
+		}
+	}
+
+	unequipBody := EquipRequest{ItemName: "Iron Sword"}
+	b, _ = json.Marshal(unequipBody)
+	req = httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/equip-test/unequip", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("unequip: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	json.NewDecoder(w.Body).Decode(&resp)
+	for _, item := range resp.Inventory {
+		if item.Name == "Iron Sword" && item.Equipped {
+			t.Error("expected Iron Sword to be unequipped")
+		}
+	}
+}
+
+func TestEquipNonEquipment(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "equip-vanity-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "Golden Cape", Type: "Vanity", Quantity: 1}
+	testDB.Create(inv)
+	t.Cleanup(func() {
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceInventoryItem{})
+		testDB.Delete(instance)
+	})
+
+	equipBody := EquipRequest{ItemName: "Golden Cape"}
+	b, _ := json.Marshal(equipBody)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/equip-vanity-test/equip", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestActivatePowerup(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "powerup-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "Health Potion", Type: "Powerup", Quantity: 3}
+	testDB.Create(inv)
+	t.Cleanup(func() {
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.ActivePowerup{})
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceInventoryItem{})
+		testDB.Delete(instance)
+	})
+
+	body := ActivatePowerupRequest{ItemName: "Health Potion"}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/powerup-test/powerups/activate", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp ActivePowerupResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if resp.ItemName != "Health Potion" {
+		t.Errorf("expected Health Potion, got %s", resp.ItemName)
+	}
+	if resp.ExpiresAt <= resp.ActivatedAt {
+		t.Error("expiresAt should be after activatedAt")
+	}
+
+	var remaining persistence.AvatarInstanceInventoryItem
+	testDB.Where("avatar_instance_id = ? AND name = ?", instance.ID, "Health Potion").First(&remaining)
+	if remaining.Quantity != 2 {
+		t.Errorf("expected quantity 2 after activation, got %d", remaining.Quantity)
 	}
 }
 

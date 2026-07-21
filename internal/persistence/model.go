@@ -54,6 +54,7 @@ type AvatarInstanceInventoryItem struct {
 	Name             string `gorm:"type:VARCHAR(100)"`
 	Type             string `gorm:"type:VARCHAR(100)"`
 	Quantity         int
+	Equipped         bool `gorm:"default:false"`
 }
 
 type AvatarInstanceAchievement struct {
@@ -80,6 +81,33 @@ type AvatarInstanceCustomization struct {
 	AvatarInstanceID uint   `gorm:"index"`
 	Name             string `gorm:"type:VARCHAR(100)"`
 	Value            string `gorm:"type:VARCHAR(100)"`
+}
+
+type ItemDefinition struct {
+	ID        uint   `gorm:"primaryKey;autoIncrement"`
+	Name      string `gorm:"type:VARCHAR(100);uniqueIndex:idx_item_game"`
+	Game      string `gorm:"type:VARCHAR(50);uniqueIndex:idx_item_game"`
+	Category  string `gorm:"type:VARCHAR(50)"`
+	Rarity    string `gorm:"type:VARCHAR(50)"`
+	Stackable bool
+	MaxStack  int
+	Duration  int
+}
+
+type ItemEffectRecord struct {
+	ID        uint   `gorm:"primaryKey;autoIncrement"`
+	ItemName  string `gorm:"type:VARCHAR(100);index:idx_effect_item_game"`
+	Game      string `gorm:"type:VARCHAR(50);index:idx_effect_item_game"`
+	Attribute string `gorm:"type:VARCHAR(100)"`
+	Modifier  string `gorm:"type:VARCHAR(50)"`
+}
+
+type ActivePowerup struct {
+	ID               uint   `gorm:"primaryKey;autoIncrement"`
+	AvatarInstanceID uint   `gorm:"index"`
+	ItemName         string `gorm:"type:VARCHAR(100)"`
+	ActivatedAt      int64
+	ExpiresAt        int64
 }
 
 type Area struct {

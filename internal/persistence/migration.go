@@ -28,6 +28,14 @@ func AvatarModels() []interface{} {
 	}
 }
 
+func ItemCatalogModels() []interface{} {
+	return []interface{}{
+		&ItemDefinition{},
+		&ItemEffectRecord{},
+		&ActivePowerup{},
+	}
+}
+
 func AreaModels() []interface{} {
 	return []interface{}{
 		&Area{},
@@ -40,6 +48,7 @@ func AllModels() []interface{} {
 	var models []interface{}
 	models = append(models, WorldModels()...)
 	models = append(models, AvatarModels()...)
+	models = append(models, ItemCatalogModels()...)
 	models = append(models, AreaModels()...)
 	return models
 }

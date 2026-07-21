@@ -37,6 +37,13 @@ func NewServer(k8sClient client.Client, addr string) *Server {
 	mux.HandleFunc("DELETE /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}", h.DeleteAvatarInstance)
 	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/worlds/{world}/areas", h.ListAreas)
 	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/worlds/{world}/areas/{name}", h.GetArea)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/items", h.ListItems)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/items/{name}", h.GetItem)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/inventory", h.GrantItem)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/equip", h.EquipItem)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/unequip", h.UnequipItem)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/powerups/activate", h.ActivatePowerup)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/powerups", h.ListActivePowerups)
 
 	mux.HandleFunc("GET /api/v1/games/{game}/worlds", h.ListWorlds)
 	mux.HandleFunc("GET /api/v1/games/{game}/worlds/{name}", h.GetWorld)
@@ -46,6 +53,13 @@ func NewServer(k8sClient client.Client, addr string) *Server {
 	mux.HandleFunc("DELETE /api/v1/games/{game}/avatars/{name}", h.DeleteAvatarInstance)
 	mux.HandleFunc("GET /api/v1/games/{game}/worlds/{world}/areas", h.ListAreas)
 	mux.HandleFunc("GET /api/v1/games/{game}/worlds/{world}/areas/{name}", h.GetArea)
+	mux.HandleFunc("GET /api/v1/games/{game}/items", h.ListItems)
+	mux.HandleFunc("GET /api/v1/games/{game}/items/{name}", h.GetItem)
+	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/inventory", h.GrantItem)
+	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/equip", h.EquipItem)
+	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/unequip", h.UnequipItem)
+	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/powerups/activate", h.ActivatePowerup)
+	mux.HandleFunc("GET /api/v1/games/{game}/avatars/{name}/powerups", h.ListActivePowerups)
 
 	handler := withCORS(withRecovery(withLogging(mux)))
 

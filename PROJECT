@@ -43,4 +43,12 @@ resources:
   kind: Area
   path: systemcraftsman.com/kubegame/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kubegame.systemcraftsman.com
+  kind: ItemCatalog
+  path: systemcraftsman.com/kubegame/api/v1alpha1
+  version: v1alpha1
 version: "3"

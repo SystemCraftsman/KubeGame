@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"gorm.io/gorm"
 	"systemcraftsman.com/kubegame/internal/persistence"
@@ -351,6 +352,7 @@ func buildInstanceResponse(db *gorm.DB, instance *persistence.AvatarInstance) *A
 			Name:     item.Name,
 			Type:     item.Type,
 			Quantity: item.Quantity,
+			Equipped: item.Equipped,
 		})
 	}
 
@@ -366,6 +368,372 @@ func buildInstanceResponse(db *gorm.DB, instance *persistence.AvatarInstance) *A
 		resp.Customizations = make(map[string]string)
 		for _, c := range customizations {
 			resp.Customizations[c.Name] = c.Value
+		}
+	}
+
+	return resp
+}
+
+func (h *Handler) ListItems(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	namespace := r.PathValue("namespace")
+
+	if game == "" {
+		writeError(w, http.StatusBadRequest, "missing game parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var items []persistence.ItemDefinition
+	db.Where("game = ?", game).Find(&items)
+
+	var responses []ItemResponse
+	for i := range items {
+		responses = append(responses, *buildItemResponse(db, &items[i]))
+	}
+
+	writeJSON(w, http.StatusOK, responses)
+}
+
+func (h *Handler) GetItem(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	name := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || name == "" {
+		writeError(w, http.StatusBadRequest, "missing game or item name parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var item persistence.ItemDefinition
+	if result := db.Where("name = ? AND game = ?", name, game).First(&item); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("item %q not found", name))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, buildItemResponse(db, &item))
+}
+
+func (h *Handler) GrantItem(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	var req GrantItemRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.ItemName == "" || req.Quantity <= 0 {
+		writeError(w, http.StatusBadRequest, "itemName and positive quantity are required")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var instance persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&instance); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	var itemDef persistence.ItemDefinition
+	if result := db.Where("name = ? AND game = ?", req.ItemName, game).First(&itemDef); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("item %q not found in catalog", req.ItemName))
+		return
+	}
+
+	if itemDef.Stackable {
+		var existing persistence.AvatarInstanceInventoryItem
+		result := db.Where("avatar_instance_id = ? AND name = ?", instance.ID, req.ItemName).First(&existing)
+		if result.Error == nil {
+			newQty := existing.Quantity + req.Quantity
+			if itemDef.MaxStack > 0 && newQty > itemDef.MaxStack {
+				newQty = itemDef.MaxStack
+			}
+			db.Model(&existing).Update("quantity", newQty)
+			resp := buildInstanceResponse(db, &instance)
+			writeJSON(w, http.StatusOK, resp)
+			return
+		}
+	}
+
+	quantity := req.Quantity
+	if itemDef.Stackable && itemDef.MaxStack > 0 && quantity > itemDef.MaxStack {
+		quantity = itemDef.MaxStack
+	}
+
+	inv := &persistence.AvatarInstanceInventoryItem{
+		AvatarInstanceID: instance.ID,
+		Name:             req.ItemName,
+		Type:             itemDef.Category,
+		Quantity:         quantity,
+	}
+	if result := db.Create(inv); result.Error != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to grant item: %v", result.Error))
+		return
+	}
+
+	resp := buildInstanceResponse(db, &instance)
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) EquipItem(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	var req EquipRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.ItemName == "" {
+		writeError(w, http.StatusBadRequest, "itemName is required")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var instance persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&instance); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	var invItem persistence.AvatarInstanceInventoryItem
+	if result := db.Where("avatar_instance_id = ? AND name = ?", instance.ID, req.ItemName).First(&invItem); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("item %q not in inventory", req.ItemName))
+		return
+	}
+
+	var itemDef persistence.ItemDefinition
+	if result := db.Where("name = ? AND game = ?", req.ItemName, game).First(&itemDef); result.Error != nil {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("item %q not found in catalog", req.ItemName))
+		return
+	}
+
+	if itemDef.Category != "Equipment" {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("item %q is not equipment (category: %s)", req.ItemName, itemDef.Category))
+		return
+	}
+
+	db.Model(&invItem).Update("equipped", true)
+
+	resp := buildInstanceResponse(db, &instance)
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) UnequipItem(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	var req EquipRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.ItemName == "" {
+		writeError(w, http.StatusBadRequest, "itemName is required")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var instance persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&instance); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	var invItem persistence.AvatarInstanceInventoryItem
+	if result := db.Where("avatar_instance_id = ? AND name = ?", instance.ID, req.ItemName).First(&invItem); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("item %q not in inventory", req.ItemName))
+		return
+	}
+
+	db.Model(&invItem).Update("equipped", false)
+
+	resp := buildInstanceResponse(db, &instance)
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) ActivatePowerup(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	var req ActivatePowerupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.ItemName == "" {
+		writeError(w, http.StatusBadRequest, "itemName is required")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var instance persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&instance); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	var invItem persistence.AvatarInstanceInventoryItem
+	if result := db.Where("avatar_instance_id = ? AND name = ?", instance.ID, req.ItemName).First(&invItem); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("item %q not in inventory", req.ItemName))
+		return
+	}
+
+	var itemDef persistence.ItemDefinition
+	if result := db.Where("name = ? AND game = ?", req.ItemName, game).First(&itemDef); result.Error != nil {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("item %q not found in catalog", req.ItemName))
+		return
+	}
+
+	if itemDef.Category != "Powerup" {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("item %q is not a powerup (category: %s)", req.ItemName, itemDef.Category))
+		return
+	}
+
+	if itemDef.Duration <= 0 {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("powerup %q has no duration defined", req.ItemName))
+		return
+	}
+
+	now := time.Now().Unix()
+	powerup := &persistence.ActivePowerup{
+		AvatarInstanceID: instance.ID,
+		ItemName:         req.ItemName,
+		ActivatedAt:      now,
+		ExpiresAt:        now + int64(itemDef.Duration),
+	}
+	if result := db.Create(powerup); result.Error != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to activate powerup: %v", result.Error))
+		return
+	}
+
+	if invItem.Quantity <= 1 {
+		db.Delete(&invItem)
+	} else {
+		db.Model(&invItem).Update("quantity", invItem.Quantity-1)
+	}
+
+	writeJSON(w, http.StatusOK, ActivePowerupResponse{
+		ItemName:    powerup.ItemName,
+		ActivatedAt: powerup.ActivatedAt,
+		ExpiresAt:   powerup.ExpiresAt,
+	})
+}
+
+func (h *Handler) ListActivePowerups(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var instance persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&instance); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	now := time.Now().Unix()
+	var powerups []persistence.ActivePowerup
+	db.Where("avatar_instance_id = ? AND expires_at > ?", instance.ID, now).Find(&powerups)
+
+	var responses []ActivePowerupResponse
+	for _, p := range powerups {
+		responses = append(responses, ActivePowerupResponse{
+			ItemName:    p.ItemName,
+			ActivatedAt: p.ActivatedAt,
+			ExpiresAt:   p.ExpiresAt,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, responses)
+}
+
+func buildItemResponse(db *gorm.DB, item *persistence.ItemDefinition) *ItemResponse {
+	resp := &ItemResponse{
+		Name:      item.Name,
+		Category:  item.Category,
+		Rarity:    item.Rarity,
+		Stackable: item.Stackable,
+		MaxStack:  item.MaxStack,
+		Duration:  item.Duration,
+	}
+
+	var effects []persistence.ItemEffectRecord
+	db.Where("item_name = ? AND game = ?", item.Name, item.Game).Find(&effects)
+	if len(effects) > 0 {
+		resp.Effects = make(map[string]string)
+		for _, e := range effects {
+			resp.Effects[e.Attribute] = e.Modifier
 		}
 	}
 

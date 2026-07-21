@@ -25,6 +25,7 @@ graph TD
 | **World** | Defines worlds/planets within a game. |
 | **Avatar** | Blueprint for avatar types. Defines attribute types, inventory types, and achievement types. |
 | **Area** | Sub-regions within worlds. Defines connected areas and properties (pvp, level, type). |
+| **ItemCatalog** | Item blueprints: Equipment, Vanity, Elite items, and Power-ups with effects. |
 
 ### Avatar as a Blueprint
 
@@ -91,10 +92,17 @@ The API server runs on port `8082` alongside the operator.
 | `GET` | `/api/v1/namespaces/{ns}/games/{game}/worlds/{name}` | Get a specific world |
 | `GET` | `/api/v1/namespaces/{ns}/games/{game}/worlds/{world}/areas` | List areas in a world |
 | `GET` | `/api/v1/namespaces/{ns}/games/{game}/worlds/{world}/areas/{name}` | Get a specific area |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/items` | List item catalog |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/items/{name}` | Get item details |
 | `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars` | Create an avatar instance |
 | `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars` | List all avatar instances |
 | `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}` | Get a specific instance |
 | `DELETE` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}` | Delete an instance |
+| `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/inventory` | Grant item to avatar |
+| `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/equip` | Equip an item |
+| `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/unequip` | Unequip an item |
+| `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/powerups/activate` | Activate a powerup |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/powerups` | List active powerups |
 
 Shorthand paths without `/namespaces/{ns}` default to the `default` namespace.
 
@@ -129,6 +137,7 @@ kubectl apply -f hack/resources/archaide.yaml
 kubectl apply -f hack/resources/chthonia.yaml
 kubectl apply -f hack/resources/middle-earth.yaml
 kubectl apply -f hack/resources/oasis-areas.yaml
+kubectl apply -f hack/resources/oasis-items.yaml
 ```
 
 ### Seed Avatar Instances
@@ -153,7 +162,7 @@ KubeGame aims to implement all [35 Gamification Mechanics](https://www.epicwinbl
 - [x] Avatar (blueprint + instance API)
 - [x] Area
 - [x] Customization
-- [ ] Equipment, Vanity/Elite Items, Power-ups (ItemCatalog CRD)
+- [x] Equipment, Vanity/Elite Items, Power-ups (ItemCatalog CRD)
 - [ ] Currency, Trading
 - [ ] Skills/Traits, XP Points (SkillTree CRD)
 - [ ] Quest, Tutorial, Special Challenge

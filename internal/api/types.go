@@ -4,6 +4,7 @@ type InventoryItem struct {
 	Name     string `json:"name"`
 	Type     string `json:"type"`
 	Quantity int    `json:"quantity"`
+	Equipped bool   `json:"equipped,omitempty"`
 }
 
 type AvatarInstanceRequest struct {
@@ -39,6 +40,35 @@ type AreaResponse struct {
 	Description    string            `json:"description,omitempty"`
 	ConnectedAreas []string          `json:"connectedAreas,omitempty"`
 	Properties     map[string]string `json:"properties,omitempty"`
+}
+
+type ItemResponse struct {
+	Name      string            `json:"name"`
+	Category  string            `json:"category"`
+	Rarity    string            `json:"rarity,omitempty"`
+	Stackable bool              `json:"stackable"`
+	MaxStack  int               `json:"maxStack,omitempty"`
+	Duration  int               `json:"duration,omitempty"`
+	Effects   map[string]string `json:"effects,omitempty"`
+}
+
+type GrantItemRequest struct {
+	ItemName string `json:"itemName"`
+	Quantity int    `json:"quantity"`
+}
+
+type EquipRequest struct {
+	ItemName string `json:"itemName"`
+}
+
+type ActivatePowerupRequest struct {
+	ItemName string `json:"itemName"`
+}
+
+type ActivePowerupResponse struct {
+	ItemName    string `json:"itemName"`
+	ActivatedAt int64  `json:"activatedAt"`
+	ExpiresAt   int64  `json:"expiresAt"`
 }
 
 type ErrorResponse struct {

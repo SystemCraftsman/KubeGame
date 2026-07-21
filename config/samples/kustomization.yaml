@@ -4,4 +4,5 @@ resources:
 - _v1alpha1_world.yaml
 - _v1alpha1_avatar.yaml
 - _v1alpha1_area.yaml
+- _v1alpha1_itemcatalog.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

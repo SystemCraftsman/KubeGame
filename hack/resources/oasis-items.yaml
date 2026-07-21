@@ -1,0 +1,157 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: ItemCatalog
+metadata:
+  name: oasis-items
+spec:
+  game: oasis
+  items:
+    # Equipment
+    - name: "Sword of the Ba Heer"
+      category: "Equipment"
+      rarity: "Legendary"
+      stackable: false
+      effects:
+        - attribute: "strength"
+          modifier: "+20"
+    - name: "Masamune Katana"
+      category: "Equipment"
+      rarity: "Epic"
+      stackable: false
+      effects:
+        - attribute: "strength"
+          modifier: "+15"
+        - attribute: "agility"
+          modifier: "+10"
+    - name: "Battleaxe"
+      category: "Equipment"
+      rarity: "Rare"
+      stackable: false
+      effects:
+        - attribute: "strength"
+          modifier: "+12"
+    - name: "Wakizashi"
+      category: "Equipment"
+      rarity: "Rare"
+      stackable: false
+      effects:
+        - attribute: "agility"
+          modifier: "+8"
+    - name: "Scale Mail"
+      category: "Equipment"
+      rarity: "Uncommon"
+      stackable: false
+      effects:
+        - attribute: "armorClass"
+          modifier: "+10"
+    - name: "Samurai Yoroi"
+      category: "Equipment"
+      rarity: "Rare"
+      stackable: false
+      effects:
+        - attribute: "armorClass"
+          modifier: "+15"
+    - name: "Heavy Plate Armor"
+      category: "Equipment"
+      rarity: "Rare"
+      stackable: false
+      effects:
+        - attribute: "armorClass"
+          modifier: "+20"
+    - name: "Skull Armor"
+      category: "Equipment"
+      rarity: "Uncommon"
+      stackable: false
+      effects:
+        - attribute: "armorClass"
+          modifier: "+8"
+    - name: "Ninja Garb"
+      category: "Equipment"
+      rarity: "Rare"
+      stackable: false
+      effects:
+        - attribute: "agility"
+          modifier: "+12"
+    - name: "Plasma Rifle"
+      category: "Equipment"
+      rarity: "Uncommon"
+      stackable: false
+      effects:
+        - attribute: "strength"
+          modifier: "+8"
+    - name: "IOI Railgun"
+      category: "Equipment"
+      rarity: "Rare"
+      stackable: false
+      effects:
+        - attribute: "strength"
+          modifier: "+14"
+    - name: "IOI Corporate Armor"
+      category: "Equipment"
+      rarity: "Rare"
+      stackable: false
+      effects:
+        - attribute: "armorClass"
+          modifier: "+18"
+    # Vanity Items
+    - name: "Holographic Cape"
+      category: "Vanity"
+      rarity: "Rare"
+      stackable: false
+    - name: "Neon Visor"
+      category: "Vanity"
+      rarity: "Uncommon"
+      stackable: false
+    - name: "Golden Skin"
+      category: "Vanity"
+      rarity: "Epic"
+      stackable: false
+    # Elite Items
+    - name: "Zemeckis Cube"
+      category: "Elite"
+      rarity: "Legendary"
+      stackable: false
+      effects:
+        - attribute: "agility"
+          modifier: "+25"
+    - name: "Orb of Osuvox"
+      category: "Elite"
+      rarity: "Legendary"
+      stackable: false
+      effects:
+        - attribute: "intelligence"
+          modifier: "+30"
+    - name: "Catalyst"
+      category: "Elite"
+      rarity: "Legendary"
+      stackable: false
+      effects:
+        - attribute: "intelligence"
+          modifier: "+50"
+    # Powerups
+    - name: "XP Boost"
+      category: "Powerup"
+      rarity: "Uncommon"
+      stackable: true
+      maxStack: 5
+      duration: 3600
+      effects:
+        - attribute: "experiencePoints"
+          modifier: "*2"
+    - name: "Shield Generator"
+      category: "Powerup"
+      rarity: "Rare"
+      stackable: true
+      maxStack: 3
+      duration: 1800
+      effects:
+        - attribute: "armorClass"
+          modifier: "+50"
+    - name: "Berserker Rage"
+      category: "Powerup"
+      rarity: "Rare"
+      stackable: true
+      maxStack: 3
+      duration: 600
+      effects:
+        - attribute: "strength"
+          modifier: "*3"
