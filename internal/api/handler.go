@@ -606,7 +606,7 @@ func (h *Handler) UnequipItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db.Model(&invItem).Update("equipped", false)
+	db.Model(&invItem).Updates(map[string]interface{}{"equipped": false})
 
 	resp := buildInstanceResponse(db, &instance)
 	writeJSON(w, http.StatusOK, resp)
@@ -1063,8 +1063,9 @@ func (h *Handler) TransferWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	newSenderBalance := senderBalance.Balance - req.Amount
 	tx := db.Begin()
-	tx.Model(&senderBalance).Update("balance", senderBalance.Balance-req.Amount)
+	tx.Model(&senderBalance).Update("balance", newSenderBalance)
 	if receiverBalance.ID == 0 {
 		receiverBalance.Balance = newReceiverBalance
 		tx.Create(&receiverBalance)
@@ -1076,7 +1077,7 @@ func (h *Handler) TransferWallet(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, WalletBalanceResponse{
 		Currency: req.Currency,
 		Symbol:   currDef.Symbol,
-		Balance:  senderBalance.Balance - req.Amount,
+		Balance:  newSenderBalance,
 	})
 }
 
