@@ -24,6 +24,7 @@ graph TD
 | **Game** | Top-level resource. Provisions a PostgreSQL deployment per game. |
 | **World** | Defines worlds/planets within a game. |
 | **Avatar** | Blueprint for avatar types. Defines attribute types, inventory types, and achievement types. |
+| **Area** | Sub-regions within worlds. Defines connected areas and properties (pvp, level, type). |
 
 ### Avatar as a Blueprint
 
@@ -81,6 +82,10 @@ The API server runs on port `8082` alongside the operator.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/worlds` | List all worlds |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/worlds/{name}` | Get a specific world |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/worlds/{world}/areas` | List areas in a world |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/worlds/{world}/areas/{name}` | Get a specific area |
 | `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars` | Create an avatar instance |
 | `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars` | List all avatar instances |
 | `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}` | Get a specific instance |
@@ -118,6 +123,7 @@ kubectl apply -f hack/resources/incipio.yaml
 kubectl apply -f hack/resources/archaide.yaml
 kubectl apply -f hack/resources/chthonia.yaml
 kubectl apply -f hack/resources/middle-earth.yaml
+kubectl apply -f hack/resources/oasis-areas.yaml
 ```
 
 ### Seed Avatar Instances
@@ -140,7 +146,8 @@ KubeGame aims to implement all [35 Gamification Mechanics](https://www.epicwinbl
 
 - [x] World
 - [x] Avatar (blueprint + instance API)
-- [ ] Area, Customization
+- [x] Area
+- [ ] Customization
 - [ ] Equipment, Vanity/Elite Items, Power-ups (ItemCatalog CRD)
 - [ ] Currency, Trading
 - [ ] Skills/Traits, XP Points (SkillTree CRD)

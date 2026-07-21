@@ -61,3 +61,23 @@ type AvatarInstanceAchievement struct {
 	AvatarInstanceID uint   `gorm:"index"`
 	Name             string `gorm:"type:VARCHAR(100)"`
 }
+
+type Area struct {
+	Name        string `gorm:"type:VARCHAR(50);primaryKey"`
+	Game        string `gorm:"type:VARCHAR(50)"`
+	World       string `gorm:"type:VARCHAR(50)"`
+	Description string `gorm:"type:VARCHAR(1000)"`
+}
+
+type AreaConnection struct {
+	ID         uint   `gorm:"primaryKey;autoIncrement"`
+	AreaName   string `gorm:"type:VARCHAR(50);index"`
+	ConnectsTo string `gorm:"type:VARCHAR(50)"`
+}
+
+type AreaPropertyRecord struct {
+	ID       uint   `gorm:"primaryKey;autoIncrement"`
+	AreaName string `gorm:"type:VARCHAR(50);index"`
+	Name     string `gorm:"type:VARCHAR(100)"`
+	Value    string `gorm:"type:VARCHAR(500)"`
+}

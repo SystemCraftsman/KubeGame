@@ -180,6 +180,142 @@ func (h *Handler) DeleteAvatarInstance(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) ListWorlds(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	namespace := r.PathValue("namespace")
+
+	if game == "" {
+		writeError(w, http.StatusBadRequest, "missing game parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var worlds []persistence.World
+	db.Where("game = ?", game).Find(&worlds)
+
+	var responses []WorldResponse
+	for _, w := range worlds {
+		responses = append(responses, WorldResponse{
+			Name:        w.Name,
+			Game:        w.Game,
+			Description: w.Description,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, responses)
+}
+
+func (h *Handler) GetWorld(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	name := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || name == "" {
+		writeError(w, http.StatusBadRequest, "missing game or world name parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var world persistence.World
+	if result := db.Where("name = ? AND game = ?", name, game).First(&world); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("world %q not found", name))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, WorldResponse{
+		Name:        world.Name,
+		Game:        world.Game,
+		Description: world.Description,
+	})
+}
+
+func (h *Handler) ListAreas(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	world := r.PathValue("world")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || world == "" {
+		writeError(w, http.StatusBadRequest, "missing game or world parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var areas []persistence.Area
+	db.Where("game = ? AND world = ?", game, world).Find(&areas)
+
+	var responses []AreaResponse
+	for i := range areas {
+		responses = append(responses, *buildAreaResponse(db, &areas[i]))
+	}
+
+	writeJSON(w, http.StatusOK, responses)
+}
+
+func (h *Handler) GetArea(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	name := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || name == "" {
+		writeError(w, http.StatusBadRequest, "missing game or area name parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var area persistence.Area
+	if result := db.Where("name = ? AND game = ?", name, game).First(&area); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("area %q not found", name))
+		return
+	}
+
+	resp := buildAreaResponse(db, &area)
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func buildAreaResponse(db *gorm.DB, area *persistence.Area) *AreaResponse {
+	resp := &AreaResponse{
+		Name:        area.Name,
+		Game:        area.Game,
+		World:       area.World,
+		Description: area.Description,
+	}
+
+	var connections []persistence.AreaConnection
+	db.Where("area_name = ?", area.Name).Find(&connections)
+	for _, c := range connections {
+		resp.ConnectedAreas = append(resp.ConnectedAreas, c.ConnectsTo)
+	}
+
+	var props []persistence.AreaPropertyRecord
+	db.Where("area_name = ?", area.Name).Find(&props)
+	resp.Properties = make(map[string]string)
+	for _, p := range props {
+		resp.Properties[p.Name] = p.Value
+	}
+
+	return resp
+}
+
 func buildInstanceResponse(db *gorm.DB, instance *persistence.AvatarInstance) *AvatarInstanceResponse {
 	resp := &AvatarInstanceResponse{
 		ID:         instance.ID,

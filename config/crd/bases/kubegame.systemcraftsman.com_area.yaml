@@ -1,0 +1,74 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  name: area.kubegame.systemcraftsman.com
+spec:
+  group: kubegame.systemcraftsman.com
+  names:
+    kind: Area
+    listKind: AreaList
+    plural: area
+    singular: area
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Area is the Schema for the areas API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              connectedAreas:
+                items:
+                  type: string
+                type: array
+              description:
+                type: string
+              game:
+                type: string
+              properties:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - name
+                  - value
+                  type: object
+                type: array
+              world:
+                type: string
+            required:
+            - game
+            - world
+            type: object
+          status:
+            description: AreaStatus defines the observed state of Area
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

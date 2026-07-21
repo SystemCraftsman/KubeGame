@@ -24,6 +24,21 @@ type AvatarInstanceResponse struct {
 	Achievements []string          `json:"achievements,omitempty"`
 }
 
+type WorldResponse struct {
+	Name        string `json:"name"`
+	Game        string `json:"game"`
+	Description string `json:"description,omitempty"`
+}
+
+type AreaResponse struct {
+	Name           string            `json:"name"`
+	Game           string            `json:"game"`
+	World          string            `json:"world"`
+	Description    string            `json:"description,omitempty"`
+	ConnectedAreas []string          `json:"connectedAreas,omitempty"`
+	Properties     map[string]string `json:"properties,omitempty"`
+}
+
 type ErrorResponse struct {
 	Error string `json:"error"`
 }

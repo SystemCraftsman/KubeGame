@@ -39,6 +39,7 @@ rules:
 - apiGroups:
   - kubegame.systemcraftsman.com
   resources:
+  - areas
   - avatars
   - games
   - worlds
@@ -53,6 +54,7 @@ rules:
 - apiGroups:
   - kubegame.systemcraftsman.com
   resources:
+  - areas/finalizers
   - avatars/finalizers
   - games/finalizers
   - worlds/finalizers
@@ -61,6 +63,7 @@ rules:
 - apiGroups:
   - kubegame.systemcraftsman.com
   resources:
+  - areas/status
   - avatars/status
   - games/status
   - worlds/status

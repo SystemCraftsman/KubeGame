@@ -29,15 +29,23 @@ func NewServer(k8sClient client.Client, addr string) *Server {
 	h := NewHandler(getDB)
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/worlds", h.ListWorlds)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/worlds/{name}", h.GetWorld)
 	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars", h.CreateAvatarInstance)
 	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars", h.ListAvatarInstances)
 	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}", h.GetAvatarInstance)
 	mux.HandleFunc("DELETE /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}", h.DeleteAvatarInstance)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/worlds/{world}/areas", h.ListAreas)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/worlds/{world}/areas/{name}", h.GetArea)
 
+	mux.HandleFunc("GET /api/v1/games/{game}/worlds", h.ListWorlds)
+	mux.HandleFunc("GET /api/v1/games/{game}/worlds/{name}", h.GetWorld)
 	mux.HandleFunc("POST /api/v1/games/{game}/avatars", h.CreateAvatarInstance)
 	mux.HandleFunc("GET /api/v1/games/{game}/avatars", h.ListAvatarInstances)
 	mux.HandleFunc("GET /api/v1/games/{game}/avatars/{name}", h.GetAvatarInstance)
 	mux.HandleFunc("DELETE /api/v1/games/{game}/avatars/{name}", h.DeleteAvatarInstance)
+	mux.HandleFunc("GET /api/v1/games/{game}/worlds/{world}/areas", h.ListAreas)
+	mux.HandleFunc("GET /api/v1/games/{game}/worlds/{world}/areas/{name}", h.GetArea)
 
 	handler := withCORS(withRecovery(withLogging(mux)))
 

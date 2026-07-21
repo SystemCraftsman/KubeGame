@@ -1,0 +1,19 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Area
+metadata:
+  labels:
+    app.kubernetes.io/name: area
+    app.kubernetes.io/instance: area-sample
+    app.kubernetes.io/part-of: kubegame
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubegame
+  name: area-sample
+spec:
+  game: oasis
+  world: incipio
+  description: "A sample area"
+  connectedAreas:
+    - other-area
+  properties:
+    - name: pvpEnabled
+      value: "false"

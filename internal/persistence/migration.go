@@ -25,9 +25,18 @@ func AvatarModels() []interface{} {
 	}
 }
 
+func AreaModels() []interface{} {
+	return []interface{}{
+		&Area{},
+		&AreaConnection{},
+		&AreaPropertyRecord{},
+	}
+}
+
 func AllModels() []interface{} {
 	var models []interface{}
 	models = append(models, WorldModels()...)
 	models = append(models, AvatarModels()...)
+	models = append(models, AreaModels()...)
 	return models
 }

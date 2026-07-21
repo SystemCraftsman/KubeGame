@@ -5,6 +5,7 @@ resources:
 - bases/kubegame.systemcraftsman.com_games.yaml
 - bases/kubegame.systemcraftsman.com_worlds.yaml
 - bases/kubegame.systemcraftsman.com_avatars.yaml
+- bases/kubegame.systemcraftsman.com_area.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:

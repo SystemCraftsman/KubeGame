@@ -1,0 +1,109 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Area
+metadata:
+  name: ludus-campus
+spec:
+  game: oasis
+  world: incipio
+  description: The main campus area on Ludus where new avatars spawn and attend school.
+  connectedAreas:
+    - ludus-courtyard
+    - ludus-library
+  properties:
+    - name: pvpEnabled
+      value: "false"
+    - name: level
+      value: "1"
+    - name: type
+      value: spawn
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Area
+metadata:
+  name: ludus-courtyard
+spec:
+  game: oasis
+  world: incipio
+  description: The open courtyard outside the school buildings. A common gathering place for students.
+  connectedAreas:
+    - ludus-campus
+    - ludus-library
+  properties:
+    - name: pvpEnabled
+      value: "false"
+    - name: level
+      value: "1"
+    - name: type
+      value: social
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Area
+metadata:
+  name: ludus-library
+spec:
+  game: oasis
+  world: incipio
+  description: The school library where avatars can research Halliday's clues and study game lore.
+  connectedAreas:
+    - ludus-campus
+    - ludus-courtyard
+  properties:
+    - name: pvpEnabled
+      value: "false"
+    - name: level
+      value: "1"
+    - name: type
+      value: research
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Area
+metadata:
+  name: archaide-arcade-hall
+spec:
+  game: oasis
+  world: archaide
+  description: The legendary arcade hall filled with classic 80s games. Where Parzival found the Copper Key.
+  connectedAreas:
+    - archaide-volcano
+  properties:
+    - name: pvpEnabled
+      value: "true"
+    - name: level
+      value: "5"
+    - name: type
+      value: dungeon
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Area
+metadata:
+  name: archaide-volcano
+spec:
+  game: oasis
+  world: archaide
+  description: The volcanic region on the north side of Archaide, guarding the entrance to the Tomb of Horrors.
+  connectedAreas:
+    - archaide-arcade-hall
+  properties:
+    - name: pvpEnabled
+      value: "true"
+    - name: level
+      value: "8"
+    - name: type
+      value: hazard
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Area
+metadata:
+  name: chthonia-dungeon
+spec:
+  game: oasis
+  world: chthonia
+  description: The deep dungeon on Chthonia, a re-creation of Halliday's original D&D campaigns.
+  connectedAreas: []
+  properties:
+    - name: pvpEnabled
+      value: "true"
+    - name: level
+      value: "10"
+    - name: type
+      value: dungeon
