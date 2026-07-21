@@ -112,8 +112,20 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+test: manifests generate fmt vet ## Run unit tests (no Docker required).
+	go test -short ./... -coverprofile cover.out
+
+.PHONY: test-integration
+test-integration: manifests generate fmt vet envtest ## Run integration tests (requires Docker for testcontainers + envtest for K8s).
+	@echo "Starting integration tests (Docker required for PostgreSQL testcontainer)..."
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./internal/controller/ ./internal/api/ -v -coverprofile cover-integration.out
+	@echo "Integration tests complete."
+
+.PHONY: test-all
+test-all: manifests generate fmt vet envtest ## Run all tests (unit + integration, requires Docker).
+	@echo "Running all tests..."
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -v -coverprofile cover.out
+	@echo "All tests complete."
 
 ##@ Build
 

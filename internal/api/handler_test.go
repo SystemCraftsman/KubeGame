@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +23,11 @@ import (
 var testDB *gorm.DB
 
 func TestMain(m *testing.M) {
+	if flag.Lookup("test.short") != nil && flag.Lookup("test.short").Value.String() == "true" {
+		fmt.Println("skipping integration tests in short mode")
+		os.Exit(0)
+	}
+
 	ctx := context.Background()
 
 	container, err := tcpostgres.Run(ctx,

@@ -60,6 +60,9 @@ const (
 )
 
 func TestControllers(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration tests in short mode")
+	}
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Controller Suite")
 }
