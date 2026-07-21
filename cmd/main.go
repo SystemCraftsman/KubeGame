@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	kubegamesystemcraftsmancomv1alpha1 "systemcraftsman.com/kubegame/api/v1alpha1"
+	"systemcraftsman.com/kubegame/internal/api"
 	"systemcraftsman.com/kubegame/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
@@ -51,8 +52,10 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var apiAddr string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&apiAddr, "api-bind-address", ":8082", "The address the game API server binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -102,6 +105,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "World")
 		os.Exit(1)
 	}
+	if err = (&controller.AvatarReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Avatar")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -110,6 +120,12 @@ func main() {
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+
+	apiServer := api.NewServer(mgr.GetClient(), apiAddr)
+	if err := mgr.Add(apiServer); err != nil {
+		setupLog.Error(err, "unable to add API server to manager")
 		os.Exit(1)
 	}
 

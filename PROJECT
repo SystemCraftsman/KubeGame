@@ -27,4 +27,12 @@ resources:
   kind: World
   path: systemcraftsman.com/kubegame/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kubegame.systemcraftsman.com
+  kind: Avatar
+  path: systemcraftsman.com/kubegame/api/v1alpha1
+  version: v1alpha1
 version: "3"

@@ -1,0 +1,51 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Avatar
+metadata:
+  labels:
+    app.kubernetes.io/name: avatar
+    app.kubernetes.io/instance: avatar-sample
+    app.kubernetes.io/part-of: kubegame
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubegame
+  name: oasis-avatar
+spec:
+  game: oasis
+  type: "Adventurer"
+  description: "A general-purpose OASIS avatar with D&D-style RPG mechanics."
+  attributeTypes:
+    - name: "strength"
+      valueType: "int"
+    - name: "intelligence"
+      valueType: "int"
+    - name: "agility"
+      valueType: "int"
+    - name: "hitPoints"
+      valueType: "int"
+    - name: "armorClass"
+      valueType: "int"
+    - name: "experiencePoints"
+      valueType: "int"
+    - name: "level"
+      valueType: "int"
+    - name: "charisma"
+      valueType: "int"
+  inventoryTypes:
+    - name: "Weapon"
+      category: "Equipment"
+    - name: "Armor"
+      category: "Equipment"
+    - name: "Vehicle"
+      category: "Transport"
+    - name: "Artifact"
+      category: "Special"
+    - name: "Coin"
+      category: "Currency"
+  achievementTypes:
+    - name: "Copper Key"
+      description: "Found the first key in Halliday's Easter Egg Hunt."
+    - name: "Jade Key"
+      description: "Found the second key in Halliday's Easter Egg Hunt."
+    - name: "Crystal Key"
+      description: "Found the third key in Halliday's Easter Egg Hunt."
+    - name: "Easter Egg"
+      description: "Found Halliday's Easter Egg and inherited the OASIS."

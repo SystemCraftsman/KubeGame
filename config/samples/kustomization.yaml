@@ -2,4 +2,5 @@
 resources:
 - _v1alpha1_game.yaml
 - _v1alpha1_world.yaml
+- _v1alpha1_avatar.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
