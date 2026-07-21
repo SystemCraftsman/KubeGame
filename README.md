@@ -9,15 +9,12 @@ KubeGame uses a two-layer design:
 - **CRD Layer** (Schema/Config): Game designers define blueprints via `kubectl apply`. Controllers provision infrastructure and persist schema definitions to PostgreSQL.
 - **REST API Layer** (Runtime Data): Game clients create and manage player data through HTTP endpoints with validation against the blueprints.
 
-```
-kubectl apply -f game.yaml        POST /api/v1/games/oasis/avatars
-         |                                    |
-    CRD Controller                       REST API Handler
-         |                                    |
-    Creates Postgres              Validates against blueprint
-    Persists schema                   Persists instance
-         |                                    |
-         +----------> PostgreSQL <------------+
+```mermaid
+graph TD
+    A[kubectl apply -f game.yaml] --> B[CRD Controller]
+    C[POST /api/v1/games/oasis/avatars] --> D[REST API Handler]
+    B --> |Creates Postgres<br>Persists schema| E[(PostgreSQL)]
+    D --> |Validates against blueprint<br>Persists instance| E
 ```
 
 ## Custom Resources
@@ -72,10 +69,10 @@ Instance creation validates against the avatar blueprint: attributes, inventory 
 
 ### Prerequisites
 
-- Go 1.21+
+- Go 1.26+
 - A Kubernetes cluster (Kind, Minikube, etc.)
 - kubectl
-- operator-sdk v1.33.0
+- operator-sdk v1.42.3
 
 ### Deploy
 
