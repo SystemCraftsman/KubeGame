@@ -468,7 +468,7 @@ func TestListItems(t *testing.T) {
 func TestGetItem(t *testing.T) {
 	mux := newTestMux()
 
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/default/games/test-game/items/Iron Sword", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/default/games/test-game/items/iron-sword", nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -480,7 +480,7 @@ func TestGetItem(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&resp)
 
 	if resp.Name != "iron-sword" {
-		t.Errorf("expected Iron Sword, got %s", resp.Name)
+		t.Errorf("expected iron-sword, got %s", resp.Name)
 	}
 	if resp.Effects["strength"] != "+5" {
 		t.Errorf("expected strength +5, got %s", resp.Effects["strength"])
@@ -518,7 +518,7 @@ func TestGrantItem(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Error("expected Iron Sword in inventory")
+		t.Error("expected iron-sword in inventory")
 	}
 }
 
@@ -571,7 +571,7 @@ func TestEquipAndUnequipItem(t *testing.T) {
 
 	for _, item := range resp.Inventory {
 		if item.Name == "iron-sword" && !item.Equipped {
-			t.Error("expected Iron Sword to be equipped")
+			t.Error("expected iron-sword to be equipped")
 		}
 	}
 
@@ -589,7 +589,7 @@ func TestEquipAndUnequipItem(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&resp)
 	for _, item := range resp.Inventory {
 		if item.Name == "iron-sword" && item.Equipped {
-			t.Error("expected Iron Sword to be unequipped")
+			t.Error("expected iron-sword to be unequipped")
 		}
 	}
 }

@@ -76,4 +76,3 @@ func ensureLabels(ctx context.Context, c client.Client, obj client.Object, desir
 	}
 	return ctrl.Result{}, false, nil
 }
-
