@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -23,7 +27,7 @@ jobs:
         with:
           version: latest
 
-  test:
+  test-unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,9 +46,22 @@ jobs:
           name: coverage
           path: cover.out
 
+  test-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run integration tests
+        run: make test-integration
+
   build:
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test-unit, test-integration]
     steps:
       - uses: actions/checkout@v4
 
