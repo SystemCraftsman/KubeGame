@@ -26,7 +26,7 @@ type ItemEffect struct {
 }
 
 type ItemSpec struct {
-	Name      string       `json:"name"`
+	Game      string       `json:"game"`
 	Category  string       `json:"category"`
 	Rarity    string       `json:"rarity,omitempty"`
 	Stackable bool         `json:"stackable,omitempty"`
@@ -35,32 +35,27 @@ type ItemSpec struct {
 	Effects   []ItemEffect `json:"effects,omitempty"`
 }
 
-type ItemCatalogSpec struct {
-	Game  string     `json:"game"`
-	Items []ItemSpec `json:"items"`
-}
-
-type ItemCatalogStatus struct{}
+type ItemStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-type ItemCatalog struct {
+type Item struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ItemCatalogSpec   `json:"spec,omitempty"`
-	Status ItemCatalogStatus `json:"status,omitempty"`
+	Spec   ItemSpec   `json:"spec,omitempty"`
+	Status ItemStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-type ItemCatalogList struct {
+type ItemList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ItemCatalog `json:"items"`
+	Items           []Item `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ItemCatalog{}, &ItemCatalogList{})
+	SchemeBuilder.Register(&Item{}, &ItemList{})
 }

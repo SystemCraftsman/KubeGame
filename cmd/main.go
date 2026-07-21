@@ -110,11 +110,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Area")
 		os.Exit(1)
 	}
-	if err = (&controller.ItemCatalogReconciler{
+	if err = (&controller.ItemReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ItemCatalog")
+		setupLog.Error(err, "unable to create controller", "controller", "Item")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

@@ -4,14 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.2
-  name: itemcatalogs.kubegame.systemcraftsman.com
+  name: items.kubegame.systemcraftsman.com
 spec:
   group: kubegame.systemcraftsman.com
   names:
-    kind: ItemCatalog
-    listKind: ItemCatalogList
-    plural: itemcatalogs
-    singular: itemcatalog
+    kind: Item
+    listKind: ItemList
+    plural: items
+    singular: item
   scope: Namespaced
   versions:
   - name: v1alpha1
@@ -37,43 +37,33 @@ spec:
             type: object
           spec:
             properties:
-              game:
+              category:
                 type: string
-              items:
+              duration:
+                type: integer
+              effects:
                 items:
                   properties:
-                    category:
+                    attribute:
                       type: string
-                    duration:
-                      type: integer
-                    effects:
-                      items:
-                        properties:
-                          attribute:
-                            type: string
-                          modifier:
-                            type: string
-                        required:
-                        - attribute
-                        - modifier
-                        type: object
-                      type: array
-                    maxStack:
-                      type: integer
-                    name:
+                    modifier:
                       type: string
-                    rarity:
-                      type: string
-                    stackable:
-                      type: boolean
                   required:
-                  - category
-                  - name
+                  - attribute
+                  - modifier
                   type: object
                 type: array
+              game:
+                type: string
+              maxStack:
+                type: integer
+              rarity:
+                type: string
+              stackable:
+                type: boolean
             required:
+            - category
             - game
-            - items
             type: object
           status:
             type: object

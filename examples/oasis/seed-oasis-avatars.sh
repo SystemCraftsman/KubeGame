@@ -91,12 +91,12 @@ create_avatar "parzival" '{
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Gunter"}
 }'
-grant_item "parzival" "Zemeckis Cube"
-grant_item "parzival" "DeLorean"
-grant_item "parzival" "Leopardon"
-grant_item "parzival" "Sword of the Ba Heer"
-grant_item "parzival" "Quarter"
-equip_item "parzival" "Sword of the Ba Heer"
+grant_item "parzival" "zemeckis-cube"
+grant_item "parzival" "delorean"
+grant_item "parzival" "leopardon"
+grant_item "parzival" "sword-of-the-ba-heer"
+grant_item "parzival" "quarter"
+equip_item "parzival" "sword-of-the-ba-heer"
 echo ""
 
 # Art3mis (Samantha Cook)
@@ -117,11 +117,11 @@ create_avatar "art3mis" '{
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Human", "Gender": "Female", "Class": "Gunter"}
 }'
-grant_item "art3mis" "Akira Motorcycle"
-grant_item "art3mis" "Black Tiger Sword"
-grant_item "art3mis" "Scale Mail"
-equip_item "art3mis" "Black Tiger Sword"
-equip_item "art3mis" "Scale Mail"
+grant_item "art3mis" "akira-motorcycle"
+grant_item "art3mis" "black-tiger-sword"
+grant_item "art3mis" "scale-mail"
+equip_item "art3mis" "black-tiger-sword"
+equip_item "art3mis" "scale-mail"
 echo ""
 
 # Aech (Helen Harris)
@@ -142,11 +142,11 @@ create_avatar "aech" '{
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Orc", "Gender": "Male", "Class": "Warrior"}
 }'
-grant_item "aech" "Iron Giant"
-grant_item "aech" "Battleaxe"
-grant_item "aech" "Heavy Plate Armor"
-equip_item "aech" "Battleaxe"
-equip_item "aech" "Heavy Plate Armor"
+grant_item "aech" "iron-giant"
+grant_item "aech" "battleaxe"
+grant_item "aech" "heavy-plate-armor"
+equip_item "aech" "battleaxe"
+equip_item "aech" "heavy-plate-armor"
 echo ""
 
 # Daito (Toshiro Yoshiaki)
@@ -167,11 +167,11 @@ create_avatar "daito" '{
   "achievements": ["Copper Key", "Jade Key", "Crystal Key"],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Warrior"}
 }'
-grant_item "daito" "Ultraman"
-grant_item "daito" "Masamune Katana"
-grant_item "daito" "Samurai Yoroi"
-equip_item "daito" "Masamune Katana"
-equip_item "daito" "Samurai Yoroi"
+grant_item "daito" "ultraman"
+grant_item "daito" "masamune-katana"
+grant_item "daito" "samurai-yoroi"
+equip_item "daito" "masamune-katana"
+equip_item "daito" "samurai-yoroi"
 echo ""
 
 # Shoto (Akihide Karatsu)
@@ -192,11 +192,11 @@ create_avatar "shoto" '{
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Rogue"}
 }'
-grant_item "shoto" "Raideen"
-grant_item "shoto" "Wakizashi"
-grant_item "shoto" "Ninja Garb"
-equip_item "shoto" "Wakizashi"
-equip_item "shoto" "Ninja Garb"
+grant_item "shoto" "raideen"
+grant_item "shoto" "wakizashi"
+grant_item "shoto" "ninja-garb"
+equip_item "shoto" "wakizashi"
+equip_item "shoto" "ninja-garb"
 echo ""
 
 # Anorak (James Halliday)
@@ -217,10 +217,10 @@ create_avatar "anorak" '{
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Mage"}
 }'
-grant_item "anorak" "Robes of Anorak"
-grant_item "anorak" "Catalyst"
-grant_item "anorak" "Unlimited Coins"
-equip_item "anorak" "Robes of Anorak"
+grant_item "anorak" "robes-of-anorak"
+grant_item "anorak" "catalyst"
+grant_item "anorak" "unlimited-coins"
+equip_item "anorak" "robes-of-anorak"
 echo ""
 
 # i-r0k
@@ -241,11 +241,11 @@ create_avatar "i-r0k" '{
   "achievements": [],
   "customizations": {"Race": "Android", "Gender": "Male", "Class": "Rogue"}
 }'
-grant_item "i-r0k" "Orb of Osuvox"
-grant_item "i-r0k" "Skull Armor"
-grant_item "i-r0k" "Plasma Rifle"
-equip_item "i-r0k" "Skull Armor"
-equip_item "i-r0k" "Plasma Rifle"
+grant_item "i-r0k" "orb-of-osuvox"
+grant_item "i-r0k" "skull-armor"
+grant_item "i-r0k" "plasma-rifle"
+equip_item "i-r0k" "skull-armor"
+equip_item "i-r0k" "plasma-rifle"
 echo ""
 
 # Sorrento / IOI-655321
@@ -266,12 +266,12 @@ create_avatar "ioi-655321" '{
   "achievements": [],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Warrior"}
 }'
-grant_item "ioi-655321" "MechaGodzilla"
-grant_item "ioi-655321" "IOI Corporate Armor"
-grant_item "ioi-655321" "IOI Railgun"
-grant_item "ioi-655321" "Corporate Funds"
-equip_item "ioi-655321" "IOI Corporate Armor"
-equip_item "ioi-655321" "IOI Railgun"
+grant_item "ioi-655321" "mechagodzilla"
+grant_item "ioi-655321" "ioi-corporate-armor"
+grant_item "ioi-655321" "ioi-railgun"
+grant_item "ioi-655321" "corporate-funds"
+equip_item "ioi-655321" "ioi-corporate-armor"
+equip_item "ioi-655321" "ioi-railgun"
 echo ""
 
 echo "============================================"

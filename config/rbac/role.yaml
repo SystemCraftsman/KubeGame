@@ -42,7 +42,7 @@ rules:
   - areas
   - avatars
   - games
-  - itemcatalogs
+  - items
   - worlds
   verbs:
   - create
@@ -58,7 +58,7 @@ rules:
   - areas/finalizers
   - avatars/finalizers
   - games/finalizers
-  - itemcatalogs/finalizers
+  - items/finalizers
   - worlds/finalizers
   verbs:
   - update
@@ -68,7 +68,7 @@ rules:
   - areas/status
   - avatars/status
   - games/status
-  - itemcatalogs/status
+  - items/status
   - worlds/status
   verbs:
   - get

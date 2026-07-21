@@ -88,10 +88,10 @@ func seedBlueprint() {
 	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Race", Value: "Elf"})
 	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Class", Value: "Warrior"})
 	testDB.Create(&persistence.CustomizationOption{AvatarName: "test-avatar", CustomizationName: "Class", Value: "Mage"})
-	testDB.Create(&persistence.ItemDefinition{Name: "Iron Sword", Game: "test-game", Category: "Equipment", Rarity: "Common", Stackable: false})
-	testDB.Create(&persistence.ItemDefinition{Name: "Health Potion", Game: "test-game", Category: "Powerup", Rarity: "Common", Stackable: true, MaxStack: 10, Duration: 300})
-	testDB.Create(&persistence.ItemDefinition{Name: "Golden Cape", Game: "test-game", Category: "Vanity", Rarity: "Rare", Stackable: false})
-	testDB.Create(&persistence.ItemEffectRecord{ItemName: "Iron Sword", Game: "test-game", Attribute: "strength", Modifier: "+5"})
+	testDB.Create(&persistence.ItemDefinition{Name: "iron-sword", Game: "test-game", Category: "Equipment", Rarity: "Common", Stackable: false})
+	testDB.Create(&persistence.ItemDefinition{Name: "health-potion", Game: "test-game", Category: "Powerup", Rarity: "Common", Stackable: true, MaxStack: 10, Duration: 300})
+	testDB.Create(&persistence.ItemDefinition{Name: "golden-cape", Game: "test-game", Category: "Vanity", Rarity: "Rare", Stackable: false})
+	testDB.Create(&persistence.ItemEffectRecord{ItemName: "iron-sword", Game: "test-game", Attribute: "strength", Modifier: "+5"})
 }
 
 func newTestHandler() *Handler {
@@ -471,7 +471,7 @@ func TestGetItem(t *testing.T) {
 	var resp ItemResponse
 	json.NewDecoder(w.Body).Decode(&resp)
 
-	if resp.Name != "Iron Sword" {
+	if resp.Name != "iron-sword" {
 		t.Errorf("expected Iron Sword, got %s", resp.Name)
 	}
 	if resp.Effects["strength"] != "+5" {
@@ -489,7 +489,7 @@ func TestGrantItem(t *testing.T) {
 		testDB.Delete(instance)
 	})
 
-	body := GrantItemRequest{ItemName: "Iron Sword", Quantity: 1}
+	body := GrantItemRequest{ItemName: "iron-sword", Quantity: 1}
 	b, _ := json.Marshal(body)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/grant-test/inventory", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
@@ -505,7 +505,7 @@ func TestGrantItem(t *testing.T) {
 
 	found := false
 	for _, item := range resp.Inventory {
-		if item.Name == "Iron Sword" {
+		if item.Name == "iron-sword" {
 			found = true
 		}
 	}
@@ -540,14 +540,14 @@ func TestEquipAndUnequipItem(t *testing.T) {
 
 	instance := &persistence.AvatarInstance{Name: "equip-test", AvatarName: "test-avatar", Game: "test-game"}
 	testDB.Create(instance)
-	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "Iron Sword", Type: "Equipment", Quantity: 1}
+	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "iron-sword", Type: "Equipment", Quantity: 1}
 	testDB.Create(inv)
 	t.Cleanup(func() {
 		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceInventoryItem{})
 		testDB.Delete(instance)
 	})
 
-	equipBody := EquipRequest{ItemName: "Iron Sword"}
+	equipBody := EquipRequest{ItemName: "iron-sword"}
 	b, _ := json.Marshal(equipBody)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/equip-test/equip", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
@@ -562,12 +562,12 @@ func TestEquipAndUnequipItem(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&resp)
 
 	for _, item := range resp.Inventory {
-		if item.Name == "Iron Sword" && !item.Equipped {
+		if item.Name == "iron-sword" && !item.Equipped {
 			t.Error("expected Iron Sword to be equipped")
 		}
 	}
 
-	unequipBody := EquipRequest{ItemName: "Iron Sword"}
+	unequipBody := EquipRequest{ItemName: "iron-sword"}
 	b, _ = json.Marshal(unequipBody)
 	req = httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/equip-test/unequip", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
@@ -580,7 +580,7 @@ func TestEquipAndUnequipItem(t *testing.T) {
 
 	json.NewDecoder(w.Body).Decode(&resp)
 	for _, item := range resp.Inventory {
-		if item.Name == "Iron Sword" && item.Equipped {
+		if item.Name == "iron-sword" && item.Equipped {
 			t.Error("expected Iron Sword to be unequipped")
 		}
 	}
@@ -591,14 +591,14 @@ func TestEquipNonEquipment(t *testing.T) {
 
 	instance := &persistence.AvatarInstance{Name: "equip-vanity-test", AvatarName: "test-avatar", Game: "test-game"}
 	testDB.Create(instance)
-	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "Golden Cape", Type: "Vanity", Quantity: 1}
+	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "golden-cape", Type: "Vanity", Quantity: 1}
 	testDB.Create(inv)
 	t.Cleanup(func() {
 		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceInventoryItem{})
 		testDB.Delete(instance)
 	})
 
-	equipBody := EquipRequest{ItemName: "Golden Cape"}
+	equipBody := EquipRequest{ItemName: "golden-cape"}
 	b, _ := json.Marshal(equipBody)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/equip-vanity-test/equip", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
@@ -615,7 +615,7 @@ func TestActivatePowerup(t *testing.T) {
 
 	instance := &persistence.AvatarInstance{Name: "powerup-test", AvatarName: "test-avatar", Game: "test-game"}
 	testDB.Create(instance)
-	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "Health Potion", Type: "Powerup", Quantity: 3}
+	inv := &persistence.AvatarInstanceInventoryItem{AvatarInstanceID: instance.ID, Name: "health-potion", Type: "Powerup", Quantity: 3}
 	testDB.Create(inv)
 	t.Cleanup(func() {
 		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.ActivePowerup{})
@@ -623,7 +623,7 @@ func TestActivatePowerup(t *testing.T) {
 		testDB.Delete(instance)
 	})
 
-	body := ActivatePowerupRequest{ItemName: "Health Potion"}
+	body := ActivatePowerupRequest{ItemName: "health-potion"}
 	b, _ := json.Marshal(body)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/powerup-test/powerups/activate", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
@@ -637,7 +637,7 @@ func TestActivatePowerup(t *testing.T) {
 	var resp ActivePowerupResponse
 	json.NewDecoder(w.Body).Decode(&resp)
 
-	if resp.ItemName != "Health Potion" {
+	if resp.ItemName != "health-potion" {
 		t.Errorf("expected Health Potion, got %s", resp.ItemName)
 	}
 	if resp.ExpiresAt <= resp.ActivatedAt {
@@ -645,7 +645,7 @@ func TestActivatePowerup(t *testing.T) {
 	}
 
 	var remaining persistence.AvatarInstanceInventoryItem
-	testDB.Where("avatar_instance_id = ? AND name = ?", instance.ID, "Health Potion").First(&remaining)
+	testDB.Where("avatar_instance_id = ? AND name = ?", instance.ID, "health-potion").First(&remaining)
 	if remaining.Quantity != 2 {
 		t.Errorf("expected quantity 2 after activation, got %d", remaining.Quantity)
 	}

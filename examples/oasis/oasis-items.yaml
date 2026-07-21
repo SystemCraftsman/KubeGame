@@ -1,215 +1,376 @@
+# Equipment
+---
 apiVersion: kubegame.systemcraftsman.com/v1alpha1
-kind: ItemCatalog
+kind: Item
 metadata:
-  name: oasis-items
+  name: sword-of-the-ba-heer
 spec:
   game: oasis
-  items:
-    # Equipment
-    - name: "Sword of the Ba Heer"
-      category: "Equipment"
-      rarity: "Legendary"
-      stackable: false
-      effects:
-        - attribute: "strength"
-          modifier: "+20"
-    - name: "Masamune Katana"
-      category: "Equipment"
-      rarity: "Epic"
-      stackable: false
-      effects:
-        - attribute: "strength"
-          modifier: "+15"
-        - attribute: "agility"
-          modifier: "+10"
-    - name: "Battleaxe"
-      category: "Equipment"
-      rarity: "Rare"
-      stackable: false
-      effects:
-        - attribute: "strength"
-          modifier: "+12"
-    - name: "Wakizashi"
-      category: "Equipment"
-      rarity: "Rare"
-      stackable: false
-      effects:
-        - attribute: "agility"
-          modifier: "+8"
-    - name: "Scale Mail"
-      category: "Equipment"
-      rarity: "Uncommon"
-      stackable: false
-      effects:
-        - attribute: "armorClass"
-          modifier: "+10"
-    - name: "Samurai Yoroi"
-      category: "Equipment"
-      rarity: "Rare"
-      stackable: false
-      effects:
-        - attribute: "armorClass"
-          modifier: "+15"
-    - name: "Heavy Plate Armor"
-      category: "Equipment"
-      rarity: "Rare"
-      stackable: false
-      effects:
-        - attribute: "armorClass"
-          modifier: "+20"
-    - name: "Skull Armor"
-      category: "Equipment"
-      rarity: "Uncommon"
-      stackable: false
-      effects:
-        - attribute: "armorClass"
-          modifier: "+8"
-    - name: "Ninja Garb"
-      category: "Equipment"
-      rarity: "Rare"
-      stackable: false
-      effects:
-        - attribute: "agility"
-          modifier: "+12"
-    - name: "Plasma Rifle"
-      category: "Equipment"
-      rarity: "Uncommon"
-      stackable: false
-      effects:
-        - attribute: "strength"
-          modifier: "+8"
-    - name: "IOI Railgun"
-      category: "Equipment"
-      rarity: "Rare"
-      stackable: false
-      effects:
-        - attribute: "strength"
-          modifier: "+14"
-    - name: "IOI Corporate Armor"
-      category: "Equipment"
-      rarity: "Rare"
-      stackable: false
-      effects:
-        - attribute: "armorClass"
-          modifier: "+18"
-    - name: "Black Tiger Sword"
-      category: "Equipment"
-      rarity: "Rare"
-      stackable: false
-      effects:
-        - attribute: "strength"
-          modifier: "+10"
-    - name: "Robes of Anorak"
-      category: "Equipment"
-      rarity: "Legendary"
-      stackable: false
-      effects:
-        - attribute: "intelligence"
-          modifier: "+40"
-        - attribute: "armorClass"
-          modifier: "+25"
-    # Transport
-    - name: "DeLorean"
-      category: "Transport"
-      rarity: "Legendary"
-      stackable: false
-    - name: "Leopardon"
-      category: "Transport"
-      rarity: "Epic"
-      stackable: false
-    - name: "Akira Motorcycle"
-      category: "Transport"
-      rarity: "Rare"
-      stackable: false
-    - name: "Iron Giant"
-      category: "Transport"
-      rarity: "Legendary"
-      stackable: false
-    - name: "Ultraman"
-      category: "Transport"
-      rarity: "Epic"
-      stackable: false
-    - name: "Raideen"
-      category: "Transport"
-      rarity: "Epic"
-      stackable: false
-    - name: "MechaGodzilla"
-      category: "Transport"
-      rarity: "Legendary"
-      stackable: false
-    # Currency
-    - name: "Quarter"
-      category: "Currency"
-      rarity: "Legendary"
-      stackable: false
-    - name: "Unlimited Coins"
-      category: "Currency"
-      rarity: "Legendary"
-      stackable: false
-    - name: "Corporate Funds"
-      category: "Currency"
-      rarity: "Rare"
-      stackable: false
-    # Vanity Items
-    - name: "Holographic Cape"
-      category: "Vanity"
-      rarity: "Rare"
-      stackable: false
-    - name: "Neon Visor"
-      category: "Vanity"
-      rarity: "Uncommon"
-      stackable: false
-    - name: "Golden Skin"
-      category: "Vanity"
-      rarity: "Epic"
-      stackable: false
-    # Elite Items
-    - name: "Zemeckis Cube"
-      category: "Elite"
-      rarity: "Legendary"
-      stackable: false
-      effects:
-        - attribute: "agility"
-          modifier: "+25"
-    - name: "Orb of Osuvox"
-      category: "Elite"
-      rarity: "Legendary"
-      stackable: false
-      effects:
-        - attribute: "intelligence"
-          modifier: "+30"
-    - name: "Catalyst"
-      category: "Elite"
-      rarity: "Legendary"
-      stackable: false
-      effects:
-        - attribute: "intelligence"
-          modifier: "+50"
-    # Powerups
-    - name: "XP Boost"
-      category: "Powerup"
-      rarity: "Uncommon"
-      stackable: true
-      maxStack: 5
-      duration: 3600
-      effects:
-        - attribute: "experiencePoints"
-          modifier: "*2"
-    - name: "Shield Generator"
-      category: "Powerup"
-      rarity: "Rare"
-      stackable: true
-      maxStack: 3
-      duration: 1800
-      effects:
-        - attribute: "armorClass"
-          modifier: "+50"
-    - name: "Berserker Rage"
-      category: "Powerup"
-      rarity: "Rare"
-      stackable: true
-      maxStack: 3
-      duration: 600
-      effects:
-        - attribute: "strength"
-          modifier: "*3"
+  category: Equipment
+  rarity: Legendary
+  effects:
+    - attribute: strength
+      modifier: "+20"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: masamune-katana
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Epic
+  effects:
+    - attribute: strength
+      modifier: "+15"
+    - attribute: agility
+      modifier: "+10"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: battleaxe
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Rare
+  effects:
+    - attribute: strength
+      modifier: "+12"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: wakizashi
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Rare
+  effects:
+    - attribute: agility
+      modifier: "+8"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: scale-mail
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Uncommon
+  effects:
+    - attribute: armorClass
+      modifier: "+10"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: samurai-yoroi
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Rare
+  effects:
+    - attribute: armorClass
+      modifier: "+15"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: heavy-plate-armor
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Rare
+  effects:
+    - attribute: armorClass
+      modifier: "+20"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: skull-armor
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Uncommon
+  effects:
+    - attribute: armorClass
+      modifier: "+8"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: ninja-garb
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Rare
+  effects:
+    - attribute: agility
+      modifier: "+12"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: plasma-rifle
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Uncommon
+  effects:
+    - attribute: strength
+      modifier: "+8"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: ioi-railgun
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Rare
+  effects:
+    - attribute: strength
+      modifier: "+14"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: ioi-corporate-armor
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Rare
+  effects:
+    - attribute: armorClass
+      modifier: "+18"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: black-tiger-sword
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Rare
+  effects:
+    - attribute: strength
+      modifier: "+10"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: robes-of-anorak
+spec:
+  game: oasis
+  category: Equipment
+  rarity: Legendary
+  effects:
+    - attribute: intelligence
+      modifier: "+40"
+    - attribute: armorClass
+      modifier: "+25"
+# Transport
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: delorean
+spec:
+  game: oasis
+  category: Transport
+  rarity: Legendary
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: leopardon
+spec:
+  game: oasis
+  category: Transport
+  rarity: Epic
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: akira-motorcycle
+spec:
+  game: oasis
+  category: Transport
+  rarity: Rare
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: iron-giant
+spec:
+  game: oasis
+  category: Transport
+  rarity: Legendary
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: ultraman
+spec:
+  game: oasis
+  category: Transport
+  rarity: Epic
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: raideen
+spec:
+  game: oasis
+  category: Transport
+  rarity: Epic
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: mechagodzilla
+spec:
+  game: oasis
+  category: Transport
+  rarity: Legendary
+# Currency
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: quarter
+spec:
+  game: oasis
+  category: Currency
+  rarity: Legendary
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: unlimited-coins
+spec:
+  game: oasis
+  category: Currency
+  rarity: Legendary
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: corporate-funds
+spec:
+  game: oasis
+  category: Currency
+  rarity: Rare
+# Vanity
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: holographic-cape
+spec:
+  game: oasis
+  category: Vanity
+  rarity: Rare
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: neon-visor
+spec:
+  game: oasis
+  category: Vanity
+  rarity: Uncommon
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: golden-skin
+spec:
+  game: oasis
+  category: Vanity
+  rarity: Epic
+# Elite
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: zemeckis-cube
+spec:
+  game: oasis
+  category: Elite
+  rarity: Legendary
+  effects:
+    - attribute: agility
+      modifier: "+25"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: orb-of-osuvox
+spec:
+  game: oasis
+  category: Elite
+  rarity: Legendary
+  effects:
+    - attribute: intelligence
+      modifier: "+30"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: catalyst
+spec:
+  game: oasis
+  category: Elite
+  rarity: Legendary
+  effects:
+    - attribute: intelligence
+      modifier: "+50"
+# Powerups
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: xp-boost
+spec:
+  game: oasis
+  category: Powerup
+  rarity: Uncommon
+  stackable: true
+  maxStack: 5
+  duration: 3600
+  effects:
+    - attribute: experiencePoints
+      modifier: "*2"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: shield-generator
+spec:
+  game: oasis
+  category: Powerup
+  rarity: Rare
+  stackable: true
+  maxStack: 3
+  duration: 1800
+  effects:
+    - attribute: armorClass
+      modifier: "+50"
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Item
+metadata:
+  name: berserker-rage
+spec:
+  game: oasis
+  category: Powerup
+  rarity: Rare
+  stackable: true
+  maxStack: 3
+  duration: 600
+  effects:
+    - attribute: strength
+      modifier: "*3"

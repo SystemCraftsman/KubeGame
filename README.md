@@ -25,7 +25,7 @@ graph TD
 | **World** | Defines worlds/planets within a game. |
 | **Avatar** | Blueprint for avatar types. Defines attribute types, inventory types, and achievement types. |
 | **Area** | Sub-regions within worlds. Defines connected areas and properties (pvp, level, type). |
-| **ItemCatalog** | Item blueprints: Equipment, Vanity, Elite items, and Power-ups with effects. |
+| **Item** | Individual item definition: Equipment, Vanity, Elite, Transport, Currency, and Powerups. |
 
 ### Avatar as a Blueprint
 
