@@ -44,6 +44,12 @@ func NewServer(k8sClient client.Client, addr string) *Server {
 	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/unequip", h.UnequipItem)
 	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/powerups/activate", h.ActivatePowerup)
 	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/powerups", h.ListActivePowerups)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/currencies", h.ListCurrencies)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/currencies/{name}", h.GetCurrency)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/wallet", h.GetWallet)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/wallet/credit", h.CreditWallet)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/wallet/debit", h.DebitWallet)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/wallet/transfer", h.TransferWallet)
 
 	mux.HandleFunc("GET /api/v1/games/{game}/worlds", h.ListWorlds)
 	mux.HandleFunc("GET /api/v1/games/{game}/worlds/{name}", h.GetWorld)
@@ -60,6 +66,12 @@ func NewServer(k8sClient client.Client, addr string) *Server {
 	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/unequip", h.UnequipItem)
 	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/powerups/activate", h.ActivatePowerup)
 	mux.HandleFunc("GET /api/v1/games/{game}/avatars/{name}/powerups", h.ListActivePowerups)
+	mux.HandleFunc("GET /api/v1/games/{game}/currencies", h.ListCurrencies)
+	mux.HandleFunc("GET /api/v1/games/{game}/currencies/{name}", h.GetCurrency)
+	mux.HandleFunc("GET /api/v1/games/{game}/avatars/{name}/wallet", h.GetWallet)
+	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/wallet/credit", h.CreditWallet)
+	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/wallet/debit", h.DebitWallet)
+	mux.HandleFunc("POST /api/v1/games/{game}/avatars/{name}/wallet/transfer", h.TransferWallet)
 
 	handler := withCORS(withRecovery(withLogging(mux)))
 

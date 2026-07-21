@@ -36,6 +36,13 @@ func ItemModels() []interface{} {
 	}
 }
 
+func CurrencyModels() []interface{} {
+	return []interface{}{
+		&CurrencyDefinition{},
+		&AvatarCurrencyBalance{},
+	}
+}
+
 func AreaModels() []interface{} {
 	return []interface{}{
 		&Area{},
@@ -50,5 +57,6 @@ func AllModels() []interface{} {
 	models = append(models, AvatarModels()...)
 	models = append(models, ItemModels()...)
 	models = append(models, AreaModels()...)
+	models = append(models, CurrencyModels()...)
 	return models
 }

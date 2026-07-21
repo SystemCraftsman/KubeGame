@@ -1,0 +1,10 @@
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Currency
+metadata:
+  name: gold
+spec:
+  game: sample-game
+  symbol: "G"
+  tradeable: true
+  maxBalance: 1000000
+  initialBalance: 100

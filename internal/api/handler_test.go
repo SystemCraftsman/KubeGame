@@ -92,6 +92,8 @@ func seedBlueprint() {
 	testDB.Create(&persistence.ItemDefinition{Name: "health-potion", Game: "test-game", Category: "Powerup", Rarity: "Common", Stackable: true, MaxStack: 10, Duration: 300})
 	testDB.Create(&persistence.ItemDefinition{Name: "golden-cape", Game: "test-game", Category: "Vanity", Rarity: "Rare", Stackable: false})
 	testDB.Create(&persistence.ItemEffectRecord{ItemName: "iron-sword", Game: "test-game", Attribute: "strength", Modifier: "+5"})
+	testDB.Create(&persistence.CurrencyDefinition{Name: "gold", Game: "test-game", Symbol: "G", Tradeable: true, MaxBalance: 1000000, InitialBalance: 100})
+	testDB.Create(&persistence.CurrencyDefinition{Name: "gems", Game: "test-game", Symbol: "D", Tradeable: false, MaxBalance: 10000, InitialBalance: 0})
 }
 
 func newTestHandler() *Handler {
@@ -117,6 +119,12 @@ func newTestMux() *http.ServeMux {
 	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/unequip", h.UnequipItem)
 	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/powerups/activate", h.ActivatePowerup)
 	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/powerups", h.ListActivePowerups)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/currencies", h.ListCurrencies)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/currencies/{name}", h.GetCurrency)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/wallet", h.GetWallet)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/wallet/credit", h.CreditWallet)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/wallet/debit", h.DebitWallet)
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}/wallet/transfer", h.TransferWallet)
 	mux.HandleFunc("POST /api/v1/games/{game}/avatars", h.CreateAvatarInstance)
 	mux.HandleFunc("GET /api/v1/games/{game}/avatars", h.ListAvatarInstances)
 	mux.HandleFunc("GET /api/v1/games/{game}/avatars/{name}", h.GetAvatarInstance)
@@ -660,5 +668,235 @@ func TestGameNotFound(t *testing.T) {
 
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("expected 500, got %d", w.Code)
+	}
+}
+
+func TestListCurrencies(t *testing.T) {
+	mux := newTestMux()
+
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/default/games/test-game/currencies", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp []CurrencyResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if len(resp) < 2 {
+		t.Fatalf("expected at least 2 currencies, got %d", len(resp))
+	}
+}
+
+func TestGetCurrency(t *testing.T) {
+	mux := newTestMux()
+
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/default/games/test-game/currencies/gold", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp CurrencyResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if resp.Name != "gold" {
+		t.Fatalf("expected gold, got %s", resp.Name)
+	}
+	if resp.Symbol != "G" {
+		t.Fatalf("expected symbol G, got %s", resp.Symbol)
+	}
+	if !resp.Tradeable {
+		t.Fatal("expected gold to be tradeable")
+	}
+}
+
+func TestCreditAndDebitWallet(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "wallet-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	defer func() {
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarCurrencyBalance{})
+		testDB.Delete(instance)
+	}()
+
+	creditReq := CreditDebitRequest{Currency: "gold", Amount: 500}
+	body, _ := json.Marshal(creditReq)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/wallet-test/wallet/credit", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("credit: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var creditResp WalletBalanceResponse
+	json.NewDecoder(w.Body).Decode(&creditResp)
+	if creditResp.Balance != 500 {
+		t.Fatalf("expected balance 500, got %d", creditResp.Balance)
+	}
+
+	debitReq := CreditDebitRequest{Currency: "gold", Amount: 200}
+	body, _ = json.Marshal(debitReq)
+	req = httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/wallet-test/wallet/debit", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("debit: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var debitResp WalletBalanceResponse
+	json.NewDecoder(w.Body).Decode(&debitResp)
+	if debitResp.Balance != 300 {
+		t.Fatalf("expected balance 300, got %d", debitResp.Balance)
+	}
+}
+
+func TestDebitInsufficientBalance(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "debit-fail-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	defer func() {
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarCurrencyBalance{})
+		testDB.Delete(instance)
+	}()
+
+	testDB.Create(&persistence.AvatarCurrencyBalance{AvatarInstanceID: instance.ID, CurrencyName: "gold", Balance: 50})
+
+	debitReq := CreditDebitRequest{Currency: "gold", Amount: 200}
+	body, _ := json.Marshal(debitReq)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/debit-fail-test/wallet/debit", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestTransferWallet(t *testing.T) {
+	mux := newTestMux()
+
+	sender := &persistence.AvatarInstance{Name: "sender-test", AvatarName: "test-avatar", Game: "test-game"}
+	receiver := &persistence.AvatarInstance{Name: "receiver-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(sender)
+	testDB.Create(receiver)
+	defer func() {
+		testDB.Where("avatar_instance_id = ?", sender.ID).Delete(&persistence.AvatarCurrencyBalance{})
+		testDB.Where("avatar_instance_id = ?", receiver.ID).Delete(&persistence.AvatarCurrencyBalance{})
+		testDB.Delete(sender)
+		testDB.Delete(receiver)
+	}()
+
+	testDB.Create(&persistence.AvatarCurrencyBalance{AvatarInstanceID: sender.ID, CurrencyName: "gold", Balance: 1000})
+
+	transferReq := TransferRequest{Currency: "gold", Amount: 300, ToAvatar: "receiver-test"}
+	body, _ := json.Marshal(transferReq)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/sender-test/wallet/transfer", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp WalletBalanceResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+	if resp.Balance != 700 {
+		t.Fatalf("expected sender balance 700, got %d", resp.Balance)
+	}
+
+	var receiverBalance persistence.AvatarCurrencyBalance
+	testDB.Where("avatar_instance_id = ? AND currency_name = ?", receiver.ID, "gold").First(&receiverBalance)
+	if receiverBalance.Balance != 300 {
+		t.Fatalf("expected receiver balance 300, got %d", receiverBalance.Balance)
+	}
+}
+
+func TestTransferNonTradeableCurrency(t *testing.T) {
+	mux := newTestMux()
+
+	sender := &persistence.AvatarInstance{Name: "transfer-nontrade-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(sender)
+	defer func() {
+		testDB.Where("avatar_instance_id = ?", sender.ID).Delete(&persistence.AvatarCurrencyBalance{})
+		testDB.Delete(sender)
+	}()
+
+	testDB.Create(&persistence.AvatarCurrencyBalance{AvatarInstanceID: sender.ID, CurrencyName: "gems", Balance: 1000})
+
+	transferReq := TransferRequest{Currency: "gems", Amount: 100, ToAvatar: "someone"}
+	body, _ := json.Marshal(transferReq)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/transfer-nontrade-test/wallet/transfer", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for non-tradeable, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestGetWallet(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "get-wallet-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	defer func() {
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarCurrencyBalance{})
+		testDB.Delete(instance)
+	}()
+
+	testDB.Create(&persistence.AvatarCurrencyBalance{AvatarInstanceID: instance.ID, CurrencyName: "gold", Balance: 750})
+	testDB.Create(&persistence.AvatarCurrencyBalance{AvatarInstanceID: instance.ID, CurrencyName: "gems", Balance: 25})
+
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/default/games/test-game/avatars/get-wallet-test/wallet", nil)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp []WalletBalanceResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if len(resp) != 2 {
+		t.Fatalf("expected 2 wallet entries, got %d", len(resp))
+	}
+}
+
+func TestCreditExceedMaxBalance(t *testing.T) {
+	mux := newTestMux()
+
+	instance := &persistence.AvatarInstance{Name: "max-balance-test", AvatarName: "test-avatar", Game: "test-game"}
+	testDB.Create(instance)
+	defer func() {
+		testDB.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarCurrencyBalance{})
+		testDB.Delete(instance)
+	}()
+
+	testDB.Create(&persistence.AvatarCurrencyBalance{AvatarInstanceID: instance.ID, CurrencyName: "gems", Balance: 9900})
+
+	creditReq := CreditDebitRequest{Currency: "gems", Amount: 200}
+	body, _ := json.Marshal(creditReq)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/default/games/test-game/avatars/max-balance-test/wallet/credit", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for max balance exceeded, got %d: %s", w.Code, w.Body.String())
 	}
 }

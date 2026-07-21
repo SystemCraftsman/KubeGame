@@ -67,6 +67,24 @@ equip_item() {
   fi
 }
 
+credit_wallet() {
+  local avatar="$1"
+  local currency="$2"
+  local amount="$3"
+
+  response=$(curl -s -w "\n%{http_code}" -X POST "${AVATARS}/${avatar}/wallet/credit" \
+    -H "Content-Type: application/json" \
+    -d "{\"currency\": \"${currency}\", \"amount\": ${amount}}")
+
+  http_code=$(echo "${response}" | tail -1)
+
+  if [ "${http_code}" -eq 200 ]; then
+    echo "  Credited: ${currency} +${amount}"
+  else
+    echo "  FAILED credit ${currency} (${http_code})"
+  fi
+}
+
 echo "============================================"
 echo " OASIS Avatar Seed - Ready Player One"
 echo " API: ${AVATARS}"
@@ -97,6 +115,8 @@ grant_item "parzival" "leopardon"
 grant_item "parzival" "sword-of-the-ba-heer"
 grant_item "parzival" "quarter"
 equip_item "parzival" "sword-of-the-ba-heer"
+credit_wallet "parzival" "oasis-coin" 50000
+credit_wallet "parzival" "oasis-credit" 1200
 echo ""
 
 # Art3mis (Samantha Cook)
@@ -122,6 +142,8 @@ grant_item "art3mis" "black-tiger-sword"
 grant_item "art3mis" "scale-mail"
 equip_item "art3mis" "black-tiger-sword"
 equip_item "art3mis" "scale-mail"
+credit_wallet "art3mis" "oasis-coin" 42000
+credit_wallet "art3mis" "oasis-credit" 900
 echo ""
 
 # Aech (Helen Harris)
@@ -147,6 +169,8 @@ grant_item "aech" "battleaxe"
 grant_item "aech" "heavy-plate-armor"
 equip_item "aech" "battleaxe"
 equip_item "aech" "heavy-plate-armor"
+credit_wallet "aech" "oasis-coin" 38000
+credit_wallet "aech" "oasis-credit" 750
 echo ""
 
 # Daito (Toshiro Yoshiaki)
@@ -172,6 +196,7 @@ grant_item "daito" "masamune-katana"
 grant_item "daito" "samurai-yoroi"
 equip_item "daito" "masamune-katana"
 equip_item "daito" "samurai-yoroi"
+credit_wallet "daito" "oasis-coin" 35000
 echo ""
 
 # Shoto (Akihide Karatsu)
@@ -197,6 +222,7 @@ grant_item "shoto" "wakizashi"
 grant_item "shoto" "ninja-garb"
 equip_item "shoto" "wakizashi"
 equip_item "shoto" "ninja-garb"
+credit_wallet "shoto" "oasis-coin" 32000
 echo ""
 
 # Anorak (James Halliday)
@@ -221,6 +247,8 @@ grant_item "anorak" "robes-of-anorak"
 grant_item "anorak" "catalyst"
 grant_item "anorak" "unlimited-coins"
 equip_item "anorak" "robes-of-anorak"
+credit_wallet "anorak" "oasis-coin" 99999999
+credit_wallet "anorak" "oasis-credit" 10000000
 echo ""
 
 # i-r0k
@@ -246,6 +274,7 @@ grant_item "i-r0k" "skull-armor"
 grant_item "i-r0k" "plasma-rifle"
 equip_item "i-r0k" "skull-armor"
 equip_item "i-r0k" "plasma-rifle"
+credit_wallet "i-r0k" "oasis-coin" 15000
 echo ""
 
 # Sorrento / IOI-655321
@@ -272,6 +301,8 @@ grant_item "ioi-655321" "ioi-railgun"
 grant_item "ioi-655321" "corporate-funds"
 equip_item "ioi-655321" "ioi-corporate-armor"
 equip_item "ioi-655321" "ioi-railgun"
+credit_wallet "ioi-655321" "oasis-coin" 5000000
+credit_wallet "ioi-655321" "oasis-credit" 2000000
 echo ""
 
 echo "============================================"

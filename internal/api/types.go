@@ -71,6 +71,31 @@ type ActivePowerupResponse struct {
 	ExpiresAt   int64  `json:"expiresAt"`
 }
 
+type CurrencyResponse struct {
+	Name           string `json:"name"`
+	Symbol         string `json:"symbol,omitempty"`
+	Tradeable      bool   `json:"tradeable"`
+	MaxBalance     int64  `json:"maxBalance,omitempty"`
+	InitialBalance int64  `json:"initialBalance,omitempty"`
+}
+
+type WalletBalanceResponse struct {
+	Currency string `json:"currency"`
+	Symbol   string `json:"symbol,omitempty"`
+	Balance  int64  `json:"balance"`
+}
+
+type CreditDebitRequest struct {
+	Currency string `json:"currency"`
+	Amount   int64  `json:"amount"`
+}
+
+type TransferRequest struct {
+	Currency string `json:"currency"`
+	Amount   int64  `json:"amount"`
+	ToAvatar string `json:"toAvatar"`
+}
+
 type ErrorResponse struct {
 	Error string `json:"error"`
 }

@@ -129,3 +129,20 @@ type AreaPropertyRecord struct {
 	Name     string `gorm:"type:VARCHAR(100)"`
 	Value    string `gorm:"type:VARCHAR(500)"`
 }
+
+type CurrencyDefinition struct {
+	ID             uint   `gorm:"primaryKey;autoIncrement"`
+	Name           string `gorm:"type:VARCHAR(100);uniqueIndex:idx_currency_game"`
+	Game           string `gorm:"type:VARCHAR(50);uniqueIndex:idx_currency_game"`
+	Symbol         string `gorm:"type:VARCHAR(10)"`
+	Tradeable      bool
+	MaxBalance     int64
+	InitialBalance int64
+}
+
+type AvatarCurrencyBalance struct {
+	ID               uint   `gorm:"primaryKey;autoIncrement"`
+	AvatarInstanceID uint   `gorm:"uniqueIndex:idx_avatar_currency"`
+	CurrencyName     string `gorm:"type:VARCHAR(100);uniqueIndex:idx_avatar_currency"`
+	Balance          int64
+}

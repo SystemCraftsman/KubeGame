@@ -107,6 +107,17 @@ func (h *Handler) CreateAvatarInstance(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var currencies []persistence.CurrencyDefinition
+	db.Where("game = ? AND initial_balance > 0", game).Find(&currencies)
+	for _, c := range currencies {
+		wallet := &persistence.AvatarCurrencyBalance{
+			AvatarInstanceID: instance.ID,
+			CurrencyName:     c.Name,
+			Balance:          c.InitialBalance,
+		}
+		db.Create(wallet)
+	}
+
 	resp := buildInstanceResponse(db, instance)
 	writeJSON(w, http.StatusCreated, resp)
 }
@@ -185,6 +196,7 @@ func (h *Handler) DeleteAvatarInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	db.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarCurrencyBalance{})
 	db.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceCustomization{})
 	db.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceAttribute{})
 	db.Where("avatar_instance_id = ?", instance.ID).Delete(&persistence.AvatarInstanceInventoryItem{})
@@ -738,6 +750,334 @@ func buildItemResponse(db *gorm.DB, item *persistence.ItemDefinition) *ItemRespo
 	}
 
 	return resp
+}
+
+func (h *Handler) ListCurrencies(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	namespace := r.PathValue("namespace")
+
+	if game == "" {
+		writeError(w, http.StatusBadRequest, "missing game parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var currencies []persistence.CurrencyDefinition
+	db.Where("game = ?", game).Find(&currencies)
+
+	var responses []CurrencyResponse
+	for _, c := range currencies {
+		responses = append(responses, CurrencyResponse{
+			Name:           c.Name,
+			Symbol:         c.Symbol,
+			Tradeable:      c.Tradeable,
+			MaxBalance:     c.MaxBalance,
+			InitialBalance: c.InitialBalance,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, responses)
+}
+
+func (h *Handler) GetCurrency(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	name := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || name == "" {
+		writeError(w, http.StatusBadRequest, "missing game or currency name parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var currency persistence.CurrencyDefinition
+	if result := db.Where("name = ? AND game = ?", name, game).First(&currency); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("currency %q not found", name))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, CurrencyResponse{
+		Name:           currency.Name,
+		Symbol:         currency.Symbol,
+		Tradeable:      currency.Tradeable,
+		MaxBalance:     currency.MaxBalance,
+		InitialBalance: currency.InitialBalance,
+	})
+}
+
+func (h *Handler) GetWallet(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var instance persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&instance); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	var balances []persistence.AvatarCurrencyBalance
+	db.Where("avatar_instance_id = ?", instance.ID).Find(&balances)
+
+	var responses []WalletBalanceResponse
+	for _, b := range balances {
+		var currDef persistence.CurrencyDefinition
+		symbol := ""
+		if result := db.Where("name = ? AND game = ?", b.CurrencyName, game).First(&currDef); result.Error == nil {
+			symbol = currDef.Symbol
+		}
+		responses = append(responses, WalletBalanceResponse{
+			Currency: b.CurrencyName,
+			Symbol:   symbol,
+			Balance:  b.Balance,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, responses)
+}
+
+func (h *Handler) CreditWallet(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	var req CreditDebitRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Currency == "" || req.Amount <= 0 {
+		writeError(w, http.StatusBadRequest, "currency and positive amount are required")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var instance persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&instance); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	var currDef persistence.CurrencyDefinition
+	if result := db.Where("name = ? AND game = ?", req.Currency, game).First(&currDef); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("currency %q not found", req.Currency))
+		return
+	}
+
+	var balance persistence.AvatarCurrencyBalance
+	result := db.Where("avatar_instance_id = ? AND currency_name = ?", instance.ID, req.Currency).First(&balance)
+	if result.Error != nil {
+		balance = persistence.AvatarCurrencyBalance{
+			AvatarInstanceID: instance.ID,
+			CurrencyName:     req.Currency,
+			Balance:          0,
+		}
+	}
+
+	newBalance := balance.Balance + req.Amount
+	if currDef.MaxBalance > 0 && newBalance > currDef.MaxBalance {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("would exceed max balance of %d for %q", currDef.MaxBalance, req.Currency))
+		return
+	}
+
+	balance.Balance = newBalance
+	if balance.ID == 0 {
+		db.Create(&balance)
+	} else {
+		db.Model(&balance).Update("balance", newBalance)
+	}
+
+	writeJSON(w, http.StatusOK, WalletBalanceResponse{
+		Currency: req.Currency,
+		Symbol:   currDef.Symbol,
+		Balance:  newBalance,
+	})
+}
+
+func (h *Handler) DebitWallet(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	var req CreditDebitRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Currency == "" || req.Amount <= 0 {
+		writeError(w, http.StatusBadRequest, "currency and positive amount are required")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var instance persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&instance); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	var currDef persistence.CurrencyDefinition
+	if result := db.Where("name = ? AND game = ?", req.Currency, game).First(&currDef); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("currency %q not found", req.Currency))
+		return
+	}
+
+	var balance persistence.AvatarCurrencyBalance
+	if result := db.Where("avatar_instance_id = ? AND currency_name = ?", instance.ID, req.Currency).First(&balance); result.Error != nil {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("no %q balance found", req.Currency))
+		return
+	}
+
+	if balance.Balance < req.Amount {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("insufficient %q balance: have %d, need %d", req.Currency, balance.Balance, req.Amount))
+		return
+	}
+
+	newBalance := balance.Balance - req.Amount
+	db.Model(&balance).Update("balance", newBalance)
+
+	writeJSON(w, http.StatusOK, WalletBalanceResponse{
+		Currency: req.Currency,
+		Symbol:   currDef.Symbol,
+		Balance:  newBalance,
+	})
+}
+
+func (h *Handler) TransferWallet(w http.ResponseWriter, r *http.Request) {
+	game := r.PathValue("game")
+	avatarName := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
+	if game == "" || avatarName == "" {
+		writeError(w, http.StatusBadRequest, "missing game or avatar name parameter")
+		return
+	}
+
+	var req TransferRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Currency == "" || req.Amount <= 0 || req.ToAvatar == "" {
+		writeError(w, http.StatusBadRequest, "currency, positive amount, and toAvatar are required")
+		return
+	}
+
+	db, err := h.getDB(game, namespace)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
+		return
+	}
+
+	var currDef persistence.CurrencyDefinition
+	if result := db.Where("name = ? AND game = ?", req.Currency, game).First(&currDef); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("currency %q not found", req.Currency))
+		return
+	}
+
+	if !currDef.Tradeable {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("currency %q is not tradeable", req.Currency))
+		return
+	}
+
+	var sender persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", avatarName, game).First(&sender); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", avatarName))
+		return
+	}
+
+	var receiver persistence.AvatarInstance
+	if result := db.Where("name = ? AND game = ?", req.ToAvatar, game).First(&receiver); result.Error != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("avatar instance %q not found", req.ToAvatar))
+		return
+	}
+
+	var senderBalance persistence.AvatarCurrencyBalance
+	if result := db.Where("avatar_instance_id = ? AND currency_name = ?", sender.ID, req.Currency).First(&senderBalance); result.Error != nil {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("no %q balance found", req.Currency))
+		return
+	}
+
+	if senderBalance.Balance < req.Amount {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("insufficient %q balance: have %d, need %d", req.Currency, senderBalance.Balance, req.Amount))
+		return
+	}
+
+	var receiverBalance persistence.AvatarCurrencyBalance
+	rcvResult := db.Where("avatar_instance_id = ? AND currency_name = ?", receiver.ID, req.Currency).First(&receiverBalance)
+	if rcvResult.Error != nil {
+		receiverBalance = persistence.AvatarCurrencyBalance{
+			AvatarInstanceID: receiver.ID,
+			CurrencyName:     req.Currency,
+			Balance:          0,
+		}
+	}
+
+	newReceiverBalance := receiverBalance.Balance + req.Amount
+	if currDef.MaxBalance > 0 && newReceiverBalance > currDef.MaxBalance {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("transfer would exceed max balance of %d for receiver", currDef.MaxBalance))
+		return
+	}
+
+	tx := db.Begin()
+	tx.Model(&senderBalance).Update("balance", senderBalance.Balance-req.Amount)
+	if receiverBalance.ID == 0 {
+		receiverBalance.Balance = newReceiverBalance
+		tx.Create(&receiverBalance)
+	} else {
+		tx.Model(&receiverBalance).Update("balance", newReceiverBalance)
+	}
+	tx.Commit()
+
+	writeJSON(w, http.StatusOK, WalletBalanceResponse{
+		Currency: req.Currency,
+		Symbol:   currDef.Symbol,
+		Balance:  senderBalance.Balance - req.Amount,
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {

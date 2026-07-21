@@ -1,0 +1,23 @@
+# OASIS Currencies
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Currency
+metadata:
+  name: oasis-coin
+spec:
+  game: oasis
+  symbol: "OC"
+  tradeable: true
+  maxBalance: 99999999
+  initialBalance: 100
+---
+apiVersion: kubegame.systemcraftsman.com/v1alpha1
+kind: Currency
+metadata:
+  name: oasis-credit
+spec:
+  game: oasis
+  symbol: "CR"
+  tradeable: true
+  maxBalance: 10000000
+  initialBalance: 0

@@ -7,6 +7,7 @@ resources:
 - bases/kubegame.systemcraftsman.com_avatars.yaml
 - bases/kubegame.systemcraftsman.com_area.yaml
 - bases/kubegame.systemcraftsman.com_items.yaml
+- bases/kubegame.systemcraftsman.com_currencies.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:

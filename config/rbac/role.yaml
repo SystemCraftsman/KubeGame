@@ -41,6 +41,7 @@ rules:
   resources:
   - areas
   - avatars
+  - currencies
   - games
   - items
   - worlds
@@ -57,6 +58,7 @@ rules:
   resources:
   - areas/finalizers
   - avatars/finalizers
+  - currencies/finalizers
   - games/finalizers
   - items/finalizers
   - worlds/finalizers
@@ -67,6 +69,7 @@ rules:
   resources:
   - areas/status
   - avatars/status
+  - currencies/status
   - games/status
   - items/status
   - worlds/status

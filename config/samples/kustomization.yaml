@@ -5,4 +5,5 @@ resources:
 - _v1alpha1_avatar.yaml
 - _v1alpha1_area.yaml
 - _v1alpha1_item.yaml
+- kubegame.systemcraftsman.com_v1alpha1_currency.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

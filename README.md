@@ -26,6 +26,7 @@ graph TD
 | **Avatar** | Blueprint for avatar types. Defines attribute types, inventory types, and achievement types. |
 | **Area** | Sub-regions within worlds. Defines connected areas and properties (pvp, level, type). |
 | **Item** | Individual item definition: Equipment, Vanity, Elite, Transport, Currency, and Powerups. |
+| **Currency** | Virtual currency definition per game with symbol, trade rules, and initial balance. |
 
 ### Avatar as a Blueprint
 
@@ -103,6 +104,12 @@ The API server runs on port `8082` alongside the operator.
 | `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/unequip` | Unequip an item |
 | `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/powerups/activate` | Activate a powerup |
 | `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/powerups` | List active powerups |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/currencies` | List currencies |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/currencies/{name}` | Get currency details |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/wallet` | Get avatar wallet |
+| `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/wallet/credit` | Credit currency |
+| `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/wallet/debit` | Debit currency |
+| `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}/wallet/transfer` | Transfer to player |
 
 Shorthand paths without `/namespaces/{ns}` default to the `default` namespace.
 
@@ -138,6 +145,7 @@ kubectl apply -f examples/oasis/chthonia.yaml
 kubectl apply -f examples/oasis/middle-earth.yaml
 kubectl apply -f examples/oasis/oasis-areas.yaml
 kubectl apply -f examples/oasis/oasis-items.yaml
+kubectl apply -f examples/oasis/oasis-currencies.yaml
 ```
 
 ### Seed Avatar Instances
@@ -163,7 +171,8 @@ KubeGame aims to implement all [35 Gamification Mechanics](https://www.epicwinbl
 - [x] Area
 - [x] Customization
 - [x] Equipment, Vanity/Elite Items, Power-ups (ItemCatalog CRD)
-- [ ] Currency, Trading
+- [x] Currency (wallet credit/debit/transfer API)
+- [ ] Trading
 - [ ] Skills/Traits, XP Points (SkillTree CRD)
 - [ ] Quest, Tutorial, Special Challenge
 - [ ] Levels, Time Events
