@@ -99,7 +99,7 @@ func (h *Handler) CreateAvatarInstance(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetAvatarInstance(w http.ResponseWriter, r *http.Request) {
 	game := extractPathParam(r.URL.Path, "games")
-	name := extractPathParam(r.URL.Path, "avatar-instances")
+	name := extractPathParam(r.URL.Path, "avatars")
 	if game == "" || name == "" {
 		writeError(w, http.StatusBadRequest, "missing game or instance name parameter")
 		return
@@ -147,7 +147,7 @@ func (h *Handler) ListAvatarInstances(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) DeleteAvatarInstance(w http.ResponseWriter, r *http.Request) {
 	game := extractPathParam(r.URL.Path, "games")
-	name := extractPathParam(r.URL.Path, "avatar-instances")
+	name := extractPathParam(r.URL.Path, "avatars")
 	if game == "" || name == "" {
 		writeError(w, http.StatusBadRequest, "missing game or instance name parameter")
 		return

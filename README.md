@@ -10,7 +10,7 @@ KubeGame uses a two-layer design:
 - **REST API Layer** (Runtime Data): Game clients create and manage player data through HTTP endpoints with validation against the blueprints.
 
 ```
-kubectl apply -f game.yaml        POST /api/v1/games/oasis/avatar-instances
+kubectl apply -f game.yaml        POST /api/v1/games/oasis/avatars
          |                                    |
     CRD Controller                       REST API Handler
          |                                    |
@@ -61,10 +61,10 @@ The API server runs on port `8082` alongside the operator.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/v1/games/{game}/avatar-instances` | Create an avatar instance |
-| `GET` | `/api/v1/games/{game}/avatar-instances` | List all avatar instances |
-| `GET` | `/api/v1/games/{game}/avatar-instances/{name}` | Get a specific instance |
-| `DELETE` | `/api/v1/games/{game}/avatar-instances/{name}` | Delete an instance |
+| `POST` | `/api/v1/games/{game}/avatars` | Create an avatar instance |
+| `GET` | `/api/v1/games/{game}/avatars` | List all avatar instances |
+| `GET` | `/api/v1/games/{game}/avatars/{name}` | Get a specific instance |
+| `DELETE` | `/api/v1/games/{game}/avatars/{name}` | Delete an instance |
 
 Instance creation validates against the avatar blueprint: attributes, inventory categories, and achievements must be defined in the corresponding Avatar CRD.
 
@@ -109,7 +109,7 @@ This loads 8 Ready Player One characters (Parzival, Art3mis, Aech, Daito, Shoto,
 ### Verify
 
 ```bash
-curl -s http://localhost:8082/api/v1/games/oasis/avatar-instances | python3 -m json.tool
+curl -s http://localhost:8082/api/v1/games/oasis/avatars | python3 -m json.tool
 ```
 
 ## Gamification Mechanics Roadmap

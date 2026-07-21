@@ -32,8 +32,8 @@ func NewServer(k8sClient client.Client, addr string) *Server {
 	mux.HandleFunc("/api/v1/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
-		isInstanceList := strings.HasSuffix(path, "/avatar-instances") || strings.HasSuffix(path, "/avatar-instances/")
-		hasInstanceName := !isInstanceList && strings.Contains(path, "/avatar-instances/")
+		isInstanceList := strings.HasSuffix(path, "/avatars") || strings.HasSuffix(path, "/avatars/")
+		hasInstanceName := !isInstanceList && strings.Contains(path, "/avatars/")
 
 		switch {
 		case r.Method == http.MethodPost && isInstanceList:

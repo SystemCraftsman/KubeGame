@@ -8,7 +8,7 @@
 
 API_URL="${1:-http://localhost:8082}"
 GAME="oasis"
-ENDPOINT="${API_URL}/api/v1/games/${GAME}/avatar-instances"
+ENDPOINT="${API_URL}/api/v1/games/${GAME}/avatars"
 
 create_avatar() {
   local name="$1"
