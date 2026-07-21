@@ -33,6 +33,7 @@ type WorldStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="GAME",type=string,JSONPath=`.spec.game`
 
 // World is the Schema for the worlds API
 type World struct {

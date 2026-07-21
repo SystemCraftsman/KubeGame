@@ -14,7 +14,11 @@ spec:
     singular: world
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.game
+      name: GAME
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: World is the Schema for the worlds API

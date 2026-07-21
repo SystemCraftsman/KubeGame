@@ -14,7 +14,14 @@ spec:
     singular: avatar
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.game
+      name: GAME
+      type: string
+    - jsonPath: .spec.type
+      name: TYPE
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Avatar is the Schema for the avatars API

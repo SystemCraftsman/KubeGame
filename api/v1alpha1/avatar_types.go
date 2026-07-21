@@ -58,6 +58,8 @@ type AvatarStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="GAME",type=string,JSONPath=`.spec.game`
+//+kubebuilder:printcolumn:name="TYPE",type=string,JSONPath=`.spec.type`
 
 // Avatar is the Schema for the avatars API
 type Avatar struct {

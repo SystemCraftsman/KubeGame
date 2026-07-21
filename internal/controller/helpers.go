@@ -6,6 +6,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1alpha1 "systemcraftsman.com/kubegame/api/v1alpha1"
@@ -13,6 +14,11 @@ import (
 	"systemcraftsman.com/kubegame/internal/persistence"
 
 	"gorm.io/gorm"
+)
+
+const (
+	labelGame  = "kubegame.systemcraftsman.com/game"
+	labelWorld = "kubegame.systemcraftsman.com/world"
 )
 
 func resolveCredentials(ctx context.Context, c client.Client, game *v1alpha1.Game) (string, string, error) {
@@ -48,3 +54,26 @@ func getGameDB(ctx context.Context, c client.Client, game *v1alpha1.Game) (*gorm
 
 	return persistence.GetOrCreateConnection(postgresService.Name, username, password)
 }
+
+func ensureLabels(ctx context.Context, c client.Client, obj client.Object, desired map[string]string) (ctrl.Result, bool, error) {
+	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	needsUpdate := false
+	for k, v := range desired {
+		if labels[k] != v {
+			labels[k] = v
+			needsUpdate = true
+		}
+	}
+	if needsUpdate {
+		obj.SetLabels(labels)
+		if err := c.Update(ctx, obj); err != nil {
+			return ctrl.Result{}, false, err
+		}
+		return ctrl.Result{}, true, nil
+	}
+	return ctrl.Result{}, false, nil
+}
+

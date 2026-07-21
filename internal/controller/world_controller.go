@@ -91,6 +91,14 @@ func (r *WorldReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
+	if _, updated, err := ensureLabels(ctx, r.Client, &world, map[string]string{
+		labelGame: world.Spec.Game,
+	}); err != nil {
+		return ctrl.Result{}, err
+	} else if updated {
+		return ctrl.Result{}, nil
+	}
+
 	if !game.Status.Ready {
 		logger.Info("Game not ready yet, requeuing", "game", game.Name)
 		return ctrl.Result{Requeue: true}, nil

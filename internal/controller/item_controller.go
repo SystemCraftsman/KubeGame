@@ -89,6 +89,14 @@ func (r *ItemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	}
 
+	if _, updated, err := ensureLabels(ctx, r.Client, &item, map[string]string{
+		labelGame: item.Spec.Game,
+	}); err != nil {
+		return ctrl.Result{}, err
+	} else if updated {
+		return ctrl.Result{}, nil
+	}
+
 	if !game.Status.Ready {
 		logger.Info("Game not ready yet, requeuing", "game", game.Name)
 		return ctrl.Result{Requeue: true}, nil

@@ -39,6 +39,9 @@ type ItemStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="GAME",type=string,JSONPath=`.spec.game`
+//+kubebuilder:printcolumn:name="CATEGORY",type=string,JSONPath=`.spec.category`
+//+kubebuilder:printcolumn:name="RARITY",type=string,JSONPath=`.spec.rarity`
 
 type Item struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -39,6 +39,8 @@ type AreaStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="GAME",type=string,JSONPath=`.spec.game`
+//+kubebuilder:printcolumn:name="WORLD",type=string,JSONPath=`.spec.world`
 
 // Area is the Schema for the areas API
 type Area struct {

@@ -14,7 +14,17 @@ spec:
     singular: item
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.game
+      name: GAME
+      type: string
+    - jsonPath: .spec.category
+      name: CATEGORY
+      type: string
+    - jsonPath: .spec.rarity
+      name: RARITY
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         properties:

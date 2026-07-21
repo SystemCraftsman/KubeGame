@@ -14,7 +14,14 @@ spec:
     singular: area
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.game
+      name: GAME
+      type: string
+    - jsonPath: .spec.world
+      name: WORLD
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Area is the Schema for the areas API
