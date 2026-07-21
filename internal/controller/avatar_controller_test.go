@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -22,9 +23,13 @@ var _ = Describe("AvatarReconciler", func() {
 		var (
 			game   *kubegamev1alpha1.Game
 			avatar *kubegamev1alpha1.Avatar
+			secret *corev1.Secret
 		)
 
 		BeforeEach(func() {
+			secret = createDBSecret("avatar-test-db-creds")
+			Expect(k8sClient.Create(ctx, secret)).To(Succeed())
+
 			game = &kubegamev1alpha1.Game{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "avatar-test-game",
@@ -32,8 +37,7 @@ var _ = Describe("AvatarReconciler", func() {
 				},
 				Spec: kubegamev1alpha1.GameSpec{
 					Database: kubegamev1alpha1.Database{
-						Username: testDBUser,
-						Password: testDBPassword,
+						SecretRef: "avatar-test-db-creds",
 					},
 				},
 			}
@@ -76,6 +80,7 @@ var _ = Describe("AvatarReconciler", func() {
 		AfterEach(func() {
 			Expect(k8sClient.Delete(ctx, avatar)).To(Succeed())
 			Expect(k8sClient.Delete(ctx, game)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, secret)).To(Succeed())
 		})
 
 		It("should add a finalizer to the Avatar", func() {

@@ -21,9 +21,7 @@ import (
 )
 
 type Database struct {
-	Username  string `json:"username,omitempty"`
-	Password  string `json:"password,omitempty"`
-	SecretRef string `json:"secretRef,omitempty"`
+	SecretRef string `json:"secretRef"`
 }
 
 type GameSpec struct {

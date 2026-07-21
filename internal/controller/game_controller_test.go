@@ -14,6 +14,19 @@ import (
 	"systemcraftsman.com/kubegame/internal/common"
 )
 
+func createDBSecret(name string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"username": []byte(testDBUser),
+			"password": []byte(testDBPassword),
+		},
+	}
+}
+
 var _ = Describe("GameReconciler", func() {
 	const (
 		timeout  = 30 * time.Second
@@ -21,9 +34,15 @@ var _ = Describe("GameReconciler", func() {
 	)
 
 	Context("when a Game CR is created", func() {
-		var game *kubegamev1alpha1.Game
+		var (
+			game   *kubegamev1alpha1.Game
+			secret *corev1.Secret
+		)
 
 		BeforeEach(func() {
+			secret = createDBSecret("test-game-db-creds")
+			Expect(k8sClient.Create(ctx, secret)).To(Succeed())
+
 			game = &kubegamev1alpha1.Game{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-game",
@@ -31,8 +50,7 @@ var _ = Describe("GameReconciler", func() {
 				},
 				Spec: kubegamev1alpha1.GameSpec{
 					Database: kubegamev1alpha1.Database{
-						Username: testDBUser,
-						Password: testDBPassword,
+						SecretRef: "test-game-db-creds",
 					},
 				},
 			}
@@ -41,6 +59,7 @@ var _ = Describe("GameReconciler", func() {
 
 		AfterEach(func() {
 			Expect(k8sClient.Delete(ctx, game)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, secret)).To(Succeed())
 		})
 
 		It("should create a PostgreSQL Deployment", func() {
@@ -90,33 +109,18 @@ var _ = Describe("GameReconciler", func() {
 		})
 	})
 
-	Context("when a Game CR uses SecretRef", func() {
-		var (
-			game   *kubegamev1alpha1.Game
-			secret *corev1.Secret
-		)
+	Context("when a Game CR references a missing Secret", func() {
+		var game *kubegamev1alpha1.Game
 
 		BeforeEach(func() {
-			secret = &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-db-secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					"username": []byte(testDBUser),
-					"password": []byte(testDBPassword),
-				},
-			}
-			Expect(k8sClient.Create(ctx, secret)).To(Succeed())
-
 			game = &kubegamev1alpha1.Game{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-game-secret",
+					Name:      "test-game-bad-secret",
 					Namespace: "default",
 				},
 				Spec: kubegamev1alpha1.GameSpec{
 					Database: kubegamev1alpha1.Database{
-						SecretRef: "test-db-secret",
+						SecretRef: "nonexistent-secret",
 					},
 				},
 			}
@@ -125,18 +129,18 @@ var _ = Describe("GameReconciler", func() {
 
 		AfterEach(func() {
 			Expect(k8sClient.Delete(ctx, game)).To(Succeed())
-			Expect(k8sClient.Delete(ctx, secret)).To(Succeed())
 		})
 
-		It("should resolve credentials from Secret and create resources", func() {
-			deploymentKey := types.NamespacedName{
-				Name:      game.Name + common.PostgresSuffix,
-				Namespace: game.Namespace,
-			}
+		It("should not set the Game status to Ready", func() {
+			gameKey := types.NamespacedName{Name: game.Name, Namespace: game.Namespace}
 
-			Eventually(func() error {
-				return k8sClient.Get(ctx, deploymentKey, &appsv1.Deployment{})
-			}, timeout, interval).Should(Succeed())
+			Consistently(func() bool {
+				var g kubegamev1alpha1.Game
+				if err := k8sClient.Get(ctx, gameKey, &g); err != nil {
+					return false
+				}
+				return g.Status.Ready
+			}, 3*time.Second, interval).Should(BeFalse())
 		})
 	})
 })

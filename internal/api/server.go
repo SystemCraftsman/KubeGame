@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	corev1 "k8s.io/api/core/v1"
 	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,10 +75,17 @@ func resolveGameDB(k8sClient client.Client, gameName, namespace string) (*gorm.D
 		return nil, fmt.Errorf("game %q not found in namespace %q: %v", gameName, namespace, err)
 	}
 
-	serviceName := gameName + common.PostgresSuffix
+	var secret corev1.Secret
+	if err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Name:      game.Spec.Database.SecretRef,
+		Namespace: namespace,
+	}, &secret); err != nil {
+		return nil, fmt.Errorf("secret %q not found: %v", game.Spec.Database.SecretRef, err)
+	}
 
-	username := game.Spec.Database.Username
-	password := game.Spec.Database.Password
+	username := string(secret.Data["username"])
+	password := string(secret.Data["password"])
+	serviceName := gameName + common.PostgresSuffix
 
 	return persistence.GetOrCreateConnection(serviceName, username, password)
 }

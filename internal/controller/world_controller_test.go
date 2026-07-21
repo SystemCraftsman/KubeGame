@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -20,11 +21,15 @@ var _ = Describe("WorldReconciler", func() {
 
 	Context("when a World CR is created with a ready Game", func() {
 		var (
-			game  *kubegamev1alpha1.Game
-			world *kubegamev1alpha1.World
+			game   *kubegamev1alpha1.Game
+			world  *kubegamev1alpha1.World
+			secret *corev1.Secret
 		)
 
 		BeforeEach(func() {
+			secret = createDBSecret("world-test-db-creds")
+			Expect(k8sClient.Create(ctx, secret)).To(Succeed())
+
 			game = &kubegamev1alpha1.Game{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "world-test-game",
@@ -32,8 +37,7 @@ var _ = Describe("WorldReconciler", func() {
 				},
 				Spec: kubegamev1alpha1.GameSpec{
 					Database: kubegamev1alpha1.Database{
-						Username: testDBUser,
-						Password: testDBPassword,
+						SecretRef: "world-test-db-creds",
 					},
 				},
 			}
@@ -64,6 +68,7 @@ var _ = Describe("WorldReconciler", func() {
 		AfterEach(func() {
 			Expect(k8sClient.Delete(ctx, world)).To(Succeed())
 			Expect(k8sClient.Delete(ctx, game)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, secret)).To(Succeed())
 		})
 
 		It("should add a finalizer to the World", func() {

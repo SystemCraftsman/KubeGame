@@ -40,12 +40,10 @@ spec:
             properties:
               database:
                 properties:
-                  password:
-                    type: string
                   secretRef:
                     type: string
-                  username:
-                    type: string
+                required:
+                - secretRef
                 type: object
             required:
             - database

@@ -54,22 +54,26 @@ spec:
 
 ### Database Credentials
 
-Credentials can be provided inline or via a Kubernetes Secret:
+Database credentials are managed via Kubernetes Secrets:
 
 ```yaml
-# Inline
-spec:
-  database:
-    username: admin
-    password: secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oasis-db-credentials
+type: Opaque
+stringData:
+  username: oasisUser
+  password: SomeSecretPassword
+```
 
-# Via Secret (recommended)
+Reference the Secret in the Game CR:
+
+```yaml
 spec:
   database:
     secretRef: oasis-db-credentials
 ```
-
-The Secret must contain `username` and `password` keys.
 
 ## REST API
 

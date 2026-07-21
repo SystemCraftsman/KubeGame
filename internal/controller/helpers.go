@@ -16,24 +16,20 @@ import (
 )
 
 func resolveCredentials(ctx context.Context, c client.Client, game *v1alpha1.Game) (string, string, error) {
-	if game.Spec.Database.SecretRef != "" {
-		var secret corev1.Secret
-		if err := c.Get(ctx, types.NamespacedName{
-			Name:      game.Spec.Database.SecretRef,
-			Namespace: game.Namespace,
-		}, &secret); err != nil {
-			return "", "", fmt.Errorf("secret %q not found: %v", game.Spec.Database.SecretRef, err)
-		}
-
-		username := string(secret.Data["username"])
-		password := string(secret.Data["password"])
-		if username == "" || password == "" {
-			return "", "", fmt.Errorf("secret %q must contain 'username' and 'password' keys", game.Spec.Database.SecretRef)
-		}
-		return username, password, nil
+	var secret corev1.Secret
+	if err := c.Get(ctx, types.NamespacedName{
+		Name:      game.Spec.Database.SecretRef,
+		Namespace: game.Namespace,
+	}, &secret); err != nil {
+		return "", "", fmt.Errorf("secret %q not found: %v", game.Spec.Database.SecretRef, err)
 	}
 
-	return game.Spec.Database.Username, game.Spec.Database.Password, nil
+	username := string(secret.Data["username"])
+	password := string(secret.Data["password"])
+	if username == "" || password == "" {
+		return "", "", fmt.Errorf("secret %q must contain 'username' and 'password' keys", game.Spec.Database.SecretRef)
+	}
+	return username, password, nil
 }
 
 func getGameDB(ctx context.Context, c client.Client, game *v1alpha1.Game) (*gorm.DB, error) {

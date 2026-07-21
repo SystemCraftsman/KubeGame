@@ -1,8 +1,16 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oasis-db-credentials
+type: Opaque
+stringData:
+  username: oasisUser
+  password: SomeSecretPassword
+---
 apiVersion: kubegame.systemcraftsman.com/v1alpha1
 kind: Game
 metadata:
   name: oasis
 spec:
   database:
-    username: oasisUser
-    password: SomeSecretPassword
+    secretRef: oasis-db-credentials
