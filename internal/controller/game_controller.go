@@ -18,24 +18,29 @@ package controller
 
 import (
 	"context"
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"fmt"
 	"os"
 	"strconv"
-	"systemcraftsman.com/kubegame/internal/common"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"systemcraftsman.com/kubegame/api/v1alpha1"
+	"systemcraftsman.com/kubegame/internal/common"
+	"systemcraftsman.com/kubegame/internal/persistence"
 )
+
+const gameFinalizer = "kubegame.systemcraftsman.com/finalizer"
 
 type GameReconciler struct {
 	client.Client
@@ -45,11 +50,13 @@ type GameReconciler struct {
 //+kubebuilder:rbac:groups=kubegame.systemcraftsman.com,resources=games,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=kubegame.systemcraftsman.com,resources=games/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kubegame.systemcraftsman.com,resources=games/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	// Fetch the Game resource
 	var game v1alpha1.Game
 	if err := r.Get(ctx, req.NamespacedName, &game); err != nil {
 		if errors.IsNotFound(err) {
@@ -60,28 +67,41 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	// Check if the resource is marked for deletion
 	if !game.DeletionTimestamp.IsZero() {
-		logger.Info("Handling deletion")
-		// handle deletion logic
+		if controllerutil.ContainsFinalizer(&game, gameFinalizer) {
+			serviceName := game.Name + common.PostgresSuffix
+			persistence.CloseConnection(serviceName)
+			logger.Info("Cleaned up database connection pool", "game", game.Name)
+
+			controllerutil.RemoveFinalizer(&game, gameFinalizer)
+			if err := r.Update(ctx, &game); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
 		return ctrl.Result{}, nil
 	}
 
-	//Status update
-	game.Status.Ready = true
-	if err := r.Status().Update(ctx, &game); err != nil {
-		logger.Error(err, "Failed to update Game status")
+	if !controllerutil.ContainsFinalizer(&game, gameFinalizer) {
+		controllerutil.AddFinalizer(&game, gameFinalizer)
+		if err := r.Update(ctx, &game); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	username, password, err := resolveCredentials(ctx, r.Client, &game)
+	if err != nil {
+		logger.Error(err, "Failed to resolve database credentials")
+		game.Status.Ready = false
+		game.Status.Message = fmt.Sprintf("Failed to resolve credentials: %v", err)
+		r.Status().Update(ctx, &game)
 		return ctrl.Result{}, err
 	}
 
-	// Handle creation or updates for dependent resources, like Services or Deployments
-	// For example, you might want to ensure a Deployment exists for the game
-	// Check if the Deployment already exists
 	var postgresDeployment appsv1.Deployment
 	if err := r.Get(ctx, types.NamespacedName{Name: game.Name + common.PostgresSuffix, Namespace: game.Namespace}, &postgresDeployment); err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Creating a new Deployment for Game")
-			postgresDeployment = *r.getPostgresDeployment(&game)
+			postgresDeployment = *r.getPostgresDeployment(&game, username, password)
 			if err := ctrl.SetControllerReference(&game, &postgresDeployment, r.Scheme); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -111,11 +131,17 @@ func (r *GameReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	}
 
-	// Return success if nothing needs to be done
+	game.Status.Ready = true
+	game.Status.Message = "Game is ready"
+	if err := r.Status().Update(ctx, &game); err != nil {
+		logger.Error(err, "Failed to update Game status")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
-func (r *GameReconciler) getPostgresDeployment(game *v1alpha1.Game) *appsv1.Deployment {
+func (r *GameReconciler) getPostgresDeployment(game *v1alpha1.Game, username, password string) *appsv1.Deployment {
 	labels := r.getLabels(game)
 
 	deployment := &appsv1.Deployment{
@@ -137,25 +163,25 @@ func (r *GameReconciler) getPostgresDeployment(game *v1alpha1.Game) *appsv1.Depl
 					Containers: []corev1.Container{
 						{
 							Name:  "postgres",
-							Image: "postgres:13", // PostgreSQL version
+							Image: "postgres:13",
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: 5432, // PostgreSQL default port
+									ContainerPort: 5432,
 									Name:          "postgres",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "POSTGRES_DB",
-									Value: "postres",
+									Value: "postgres",
 								},
 								{
 									Name:  "POSTGRES_USER",
-									Value: game.Spec.Database.Username,
+									Value: username,
 								},
 								{
 									Name:  "POSTGRES_PASSWORD",
-									Value: game.Spec.Database.Password,
+									Value: password,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

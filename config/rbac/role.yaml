@@ -5,9 +5,29 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - kubegame.systemcraftsman.com
+  - ""
   resources:
-  - games
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
   verbs:
   - create
   - delete
@@ -19,20 +39,8 @@ rules:
 - apiGroups:
   - kubegame.systemcraftsman.com
   resources:
-  - games/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kubegame.systemcraftsman.com
-  resources:
-  - games/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - kubegame.systemcraftsman.com
-  resources:
+  - avatars
+  - games
   - worlds
   verbs:
   - create
@@ -45,39 +53,17 @@ rules:
 - apiGroups:
   - kubegame.systemcraftsman.com
   resources:
+  - avatars/finalizers
+  - games/finalizers
   - worlds/finalizers
   verbs:
   - update
 - apiGroups:
   - kubegame.systemcraftsman.com
   resources:
-  - worlds/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - kubegame.systemcraftsman.com
-  resources:
-  - avatars
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - kubegame.systemcraftsman.com
-  resources:
-  - avatars/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kubegame.systemcraftsman.com
-  resources:
   - avatars/status
+  - games/status
+  - worlds/status
   verbs:
   - get
   - patch

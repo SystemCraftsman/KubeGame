@@ -4,22 +4,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"gorm.io/gorm"
 	"systemcraftsman.com/kubegame/internal/persistence"
 )
 
 type Handler struct {
-	getDB func(game string) (*gorm.DB, error)
+	getDB func(game, namespace string) (*gorm.DB, error)
 }
 
-func NewHandler(getDB func(game string) (*gorm.DB, error)) *Handler {
+func NewHandler(getDB func(game, namespace string) (*gorm.DB, error)) *Handler {
 	return &Handler{getDB: getDB}
 }
 
 func (h *Handler) CreateAvatarInstance(w http.ResponseWriter, r *http.Request) {
-	game := extractPathParam(r.URL.Path, "games")
+	game := r.PathValue("game")
+	namespace := r.PathValue("namespace")
+
 	if game == "" {
 		writeError(w, http.StatusBadRequest, "missing game parameter")
 		return
@@ -36,7 +37,7 @@ func (h *Handler) CreateAvatarInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := h.getDB(game)
+	db, err := h.getDB(game, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
 		return
@@ -98,14 +99,16 @@ func (h *Handler) CreateAvatarInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAvatarInstance(w http.ResponseWriter, r *http.Request) {
-	game := extractPathParam(r.URL.Path, "games")
-	name := extractPathParam(r.URL.Path, "avatars")
+	game := r.PathValue("game")
+	name := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
 	if game == "" || name == "" {
 		writeError(w, http.StatusBadRequest, "missing game or instance name parameter")
 		return
 	}
 
-	db, err := h.getDB(game)
+	db, err := h.getDB(game, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
 		return
@@ -122,13 +125,15 @@ func (h *Handler) GetAvatarInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListAvatarInstances(w http.ResponseWriter, r *http.Request) {
-	game := extractPathParam(r.URL.Path, "games")
+	game := r.PathValue("game")
+	namespace := r.PathValue("namespace")
+
 	if game == "" {
 		writeError(w, http.StatusBadRequest, "missing game parameter")
 		return
 	}
 
-	db, err := h.getDB(game)
+	db, err := h.getDB(game, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
 		return
@@ -146,14 +151,16 @@ func (h *Handler) ListAvatarInstances(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteAvatarInstance(w http.ResponseWriter, r *http.Request) {
-	game := extractPathParam(r.URL.Path, "games")
-	name := extractPathParam(r.URL.Path, "avatars")
+	game := r.PathValue("game")
+	name := r.PathValue("name")
+	namespace := r.PathValue("namespace")
+
 	if game == "" || name == "" {
 		writeError(w, http.StatusBadRequest, "missing game or instance name parameter")
 		return
 	}
 
-	db, err := h.getDB(game)
+	db, err := h.getDB(game, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to connect to game database: %v", err))
 		return
@@ -205,16 +212,6 @@ func buildInstanceResponse(db *gorm.DB, instance *persistence.AvatarInstance) *A
 	}
 
 	return resp
-}
-
-func extractPathParam(path, segment string) string {
-	parts := strings.Split(strings.Trim(path, "/"), "/")
-	for i, p := range parts {
-		if p == segment && i+1 < len(parts) {
-			return parts[i+1]
-		}
-	}
-	return ""
 }
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {

@@ -12,7 +12,7 @@ KubeGame uses a two-layer design:
 ```mermaid
 graph TD
     A[kubectl apply -f game.yaml] --> B[CRD Controller]
-    C[POST /api/v1/games/oasis/avatars] --> D[REST API Handler]
+    C[POST /api/v1/namespaces/default/games/oasis/avatars] --> D[REST API Handler]
     B --> |Creates Postgres<br>Persists schema| E[(PostgreSQL)]
     D --> |Validates against blueprint<br>Persists instance| E
 ```
@@ -52,16 +52,37 @@ spec:
       description: "Found the first key."
 ```
 
+### Database Credentials
+
+Credentials can be provided inline or via a Kubernetes Secret:
+
+```yaml
+# Inline
+spec:
+  database:
+    username: admin
+    password: secret
+
+# Via Secret (recommended)
+spec:
+  database:
+    secretRef: oasis-db-credentials
+```
+
+The Secret must contain `username` and `password` keys.
+
 ## REST API
 
 The API server runs on port `8082` alongside the operator.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/v1/games/{game}/avatars` | Create an avatar instance |
-| `GET` | `/api/v1/games/{game}/avatars` | List all avatar instances |
-| `GET` | `/api/v1/games/{game}/avatars/{name}` | Get a specific instance |
-| `DELETE` | `/api/v1/games/{game}/avatars/{name}` | Delete an instance |
+| `POST` | `/api/v1/namespaces/{ns}/games/{game}/avatars` | Create an avatar instance |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars` | List all avatar instances |
+| `GET` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}` | Get a specific instance |
+| `DELETE` | `/api/v1/namespaces/{ns}/games/{game}/avatars/{name}` | Delete an instance |
+
+Shorthand paths without `/namespaces/{ns}` default to the `default` namespace.
 
 Instance creation validates against the avatar blueprint: attributes, inventory categories, and achievements must be defined in the corresponding Avatar CRD.
 
@@ -106,7 +127,7 @@ This loads 8 Ready Player One characters (Parzival, Art3mis, Aech, Daito, Shoto,
 ### Verify
 
 ```bash
-curl -s http://localhost:8082/api/v1/games/oasis/avatars | python3 -m json.tool
+curl -s http://localhost:8082/api/v1/namespaces/default/games/oasis/avatars | python3 -m json.tool
 ```
 
 ## Gamification Mechanics Roadmap

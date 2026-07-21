@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,38 +21,30 @@ type Server struct {
 }
 
 func NewServer(k8sClient client.Client, addr string) *Server {
-	getDB := func(game string) (*gorm.DB, error) {
-		return resolveGameDB(k8sClient, game)
+	getDB := func(game, namespace string) (*gorm.DB, error) {
+		return resolveGameDB(k8sClient, game, namespace)
 	}
 
 	h := NewHandler(getDB)
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/api/v1/", func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
+	mux.HandleFunc("POST /api/v1/namespaces/{namespace}/games/{game}/avatars", h.CreateAvatarInstance)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars", h.ListAvatarInstances)
+	mux.HandleFunc("GET /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}", h.GetAvatarInstance)
+	mux.HandleFunc("DELETE /api/v1/namespaces/{namespace}/games/{game}/avatars/{name}", h.DeleteAvatarInstance)
 
-		isInstanceList := strings.HasSuffix(path, "/avatars") || strings.HasSuffix(path, "/avatars/")
-		hasInstanceName := !isInstanceList && strings.Contains(path, "/avatars/")
+	mux.HandleFunc("POST /api/v1/games/{game}/avatars", h.CreateAvatarInstance)
+	mux.HandleFunc("GET /api/v1/games/{game}/avatars", h.ListAvatarInstances)
+	mux.HandleFunc("GET /api/v1/games/{game}/avatars/{name}", h.GetAvatarInstance)
+	mux.HandleFunc("DELETE /api/v1/games/{game}/avatars/{name}", h.DeleteAvatarInstance)
 
-		switch {
-		case r.Method == http.MethodPost && isInstanceList:
-			h.CreateAvatarInstance(w, r)
-		case r.Method == http.MethodGet && isInstanceList:
-			h.ListAvatarInstances(w, r)
-		case r.Method == http.MethodGet && hasInstanceName:
-			h.GetAvatarInstance(w, r)
-		case r.Method == http.MethodDelete && hasInstanceName:
-			h.DeleteAvatarInstance(w, r)
-		default:
-			writeError(w, http.StatusNotFound, "not found")
-		}
-	})
+	handler := withCORS(withRecovery(withLogging(mux)))
 
 	return &Server{
 		handler: h,
 		httpServer: &http.Server{
 			Addr:    addr,
-			Handler: mux,
+			Handler: handler,
 		},
 	}
 }
@@ -73,12 +64,20 @@ func (s *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-func resolveGameDB(k8sClient client.Client, gameName string) (*gorm.DB, error) {
+func resolveGameDB(k8sClient client.Client, gameName, namespace string) (*gorm.DB, error) {
+	if namespace == "" {
+		namespace = "default"
+	}
+
 	var game v1alpha1.Game
-	if err := k8sClient.Get(context.Background(), types.NamespacedName{Name: gameName, Namespace: "default"}, &game); err != nil {
-		return nil, fmt.Errorf("game %q not found: %v", gameName, err)
+	if err := k8sClient.Get(context.Background(), types.NamespacedName{Name: gameName, Namespace: namespace}, &game); err != nil {
+		return nil, fmt.Errorf("game %q not found in namespace %q: %v", gameName, namespace, err)
 	}
 
 	serviceName := gameName + common.PostgresSuffix
-	return persistence.CreateDatabaseConnection(serviceName, game.Spec.Database.Username, game.Spec.Database.Password)
+
+	username := game.Spec.Database.Username
+	password := game.Spec.Database.Password
+
+	return persistence.GetOrCreateConnection(serviceName, username, password)
 }

@@ -18,20 +18,21 @@ package controller
 
 import (
 	"context"
-	"gorm.io/gorm/clause"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"systemcraftsman.com/kubegame/internal/common"
-	"systemcraftsman.com/kubegame/internal/persistence"
 
+	"gorm.io/gorm/clause"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	v1alpha1 "systemcraftsman.com/kubegame/api/v1alpha1"
+	"systemcraftsman.com/kubegame/internal/persistence"
 )
+
+const worldFinalizer = "kubegame.systemcraftsman.com/finalizer"
 
 type WorldReconciler struct {
 	client.Client
@@ -45,7 +46,6 @@ type WorldReconciler struct {
 func (r *WorldReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	// Fetch the World resource
 	var world v1alpha1.World
 	if err := r.Get(ctx, req.NamespacedName, &world); err != nil {
 		if errors.IsNotFound(err) {
@@ -56,7 +56,6 @@ func (r *WorldReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	// Fetch the Game resource
 	var game v1alpha1.Game
 	if err := r.Get(ctx, types.NamespacedName{Name: world.Spec.Game, Namespace: world.Namespace}, &game); err != nil {
 		if errors.IsNotFound(err) {
@@ -67,45 +66,59 @@ func (r *WorldReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	if game.Status.Ready == true {
-		var postgresService corev1.Service
-		if err := r.Get(ctx, types.NamespacedName{Name: game.Name + common.PostgresSuffix, Namespace: game.Namespace}, &postgresService); err != nil {
-			if errors.IsNotFound(err) {
-				logger.Info("Postgres service not found, might be deleted")
-				return ctrl.Result{}, nil
+	if !world.DeletionTimestamp.IsZero() {
+		if controllerutil.ContainsFinalizer(&world, worldFinalizer) {
+			if game.Status.Ready {
+				db, err := getGameDB(ctx, r.Client, &game)
+				if err == nil {
+					db.Where("name = ?", world.Name).Delete(&persistence.World{})
+					logger.Info("Deleted world record from database", "world", world.Name)
+				}
 			}
-			logger.Error(err, "Failed to get the postgres service")
-			return ctrl.Result{}, err
-		}
 
-		db, err := persistence.CreateDatabaseConnection(postgresService.Name, game.Spec.Database.Username,
-			game.Spec.Database.Password)
-		if err != nil {
-			logger.Error(err, "Failed to create database connection")
-			return ctrl.Result{}, err
-		}
-
-		if !db.Migrator().HasTable(persistence.World{}) {
-			if err := db.Migrator().CreateTable(persistence.World{}); err != nil {
-				logger.Error(err, "Failed to create the World table")
+			controllerutil.RemoveFinalizer(&world, worldFinalizer)
+			if err := r.Update(ctx, &world); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
+		return ctrl.Result{}, nil
+	}
 
-		worldRecord := &persistence.World{
-			Name:        world.Name,
-			Game:        world.Spec.Game,
-			Description: world.Spec.Description,
+	if !controllerutil.ContainsFinalizer(&world, worldFinalizer) {
+		controllerutil.AddFinalizer(&world, worldFinalizer)
+		if err := r.Update(ctx, &world); err != nil {
+			return ctrl.Result{}, err
 		}
+	}
 
-		if result := db.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "name"}},
-			DoNothing: true,
-		}).Create(worldRecord); result.Error != nil {
-			logger.Error(err, "Failed to insert the record into the World table")
-			return ctrl.Result{}, result.Error
-		}
+	if !game.Status.Ready {
+		logger.Info("Game not ready yet, requeuing", "game", game.Name)
+		return ctrl.Result{Requeue: true}, nil
+	}
 
+	db, err := getGameDB(ctx, r.Client, &game)
+	if err != nil {
+		logger.Error(err, "Failed to get database connection")
+		return ctrl.Result{}, err
+	}
+
+	if err := persistence.RunMigrations(db, persistence.WorldModels()...); err != nil {
+		logger.Error(err, "Failed to run world migrations")
+		return ctrl.Result{}, err
+	}
+
+	worldRecord := &persistence.World{
+		Name:        world.Name,
+		Game:        world.Spec.Game,
+		Description: world.Spec.Description,
+	}
+
+	if result := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "name"}},
+		DoNothing: true,
+	}).Create(worldRecord); result.Error != nil {
+		logger.Error(result.Error, "Failed to insert the record into the World table")
+		return ctrl.Result{}, result.Error
 	}
 
 	return ctrl.Result{}, nil

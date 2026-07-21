@@ -18,20 +18,21 @@ package controller
 
 import (
 	"context"
-	"gorm.io/gorm/clause"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"systemcraftsman.com/kubegame/internal/common"
-	"systemcraftsman.com/kubegame/internal/persistence"
 
+	"gorm.io/gorm/clause"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	v1alpha1 "systemcraftsman.com/kubegame/api/v1alpha1"
+	"systemcraftsman.com/kubegame/internal/persistence"
 )
+
+const avatarFinalizer = "kubegame.systemcraftsman.com/finalizer"
 
 type AvatarReconciler struct {
 	client.Client
@@ -65,123 +66,98 @@ func (r *AvatarReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if game.Status.Ready == true {
-		var postgresService corev1.Service
-		if err := r.Get(ctx, types.NamespacedName{Name: game.Name + common.PostgresSuffix, Namespace: game.Namespace}, &postgresService); err != nil {
-			if errors.IsNotFound(err) {
-				logger.Info("Postgres service not found, might be deleted")
-				return ctrl.Result{}, nil
+	if !avatar.DeletionTimestamp.IsZero() {
+		if controllerutil.ContainsFinalizer(&avatar, avatarFinalizer) {
+			if game.Status.Ready {
+				db, err := getGameDB(ctx, r.Client, &game)
+				if err == nil {
+					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.AchievementType{})
+					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.InventoryType{})
+					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.AttributeType{})
+					db.Where("name = ?", avatar.Name).Delete(&persistence.AvatarType{})
+					logger.Info("Deleted avatar type records from database", "avatar", avatar.Name)
+				}
 			}
-			logger.Error(err, "Failed to get the postgres service")
+
+			controllerutil.RemoveFinalizer(&avatar, avatarFinalizer)
+			if err := r.Update(ctx, &avatar); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if !controllerutil.ContainsFinalizer(&avatar, avatarFinalizer) {
+		controllerutil.AddFinalizer(&avatar, avatarFinalizer)
+		if err := r.Update(ctx, &avatar); err != nil {
 			return ctrl.Result{}, err
 		}
+	}
 
-		db, err := persistence.CreateDatabaseConnection(postgresService.Name, game.Spec.Database.Username,
-			game.Spec.Database.Password)
-		if err != nil {
-			logger.Error(err, "Failed to create database connection")
-			return ctrl.Result{}, err
-		}
+	if !game.Status.Ready {
+		logger.Info("Game not ready yet, requeuing", "game", game.Name)
+		return ctrl.Result{Requeue: true}, nil
+	}
 
-		if !db.Migrator().HasTable(persistence.AvatarType{}) {
-			if err := db.Migrator().CreateTable(persistence.AvatarType{}); err != nil {
-				logger.Error(err, "Failed to create the AvatarType table")
-				return ctrl.Result{}, err
-			}
-		}
-		if !db.Migrator().HasTable(persistence.AttributeType{}) {
-			if err := db.Migrator().CreateTable(persistence.AttributeType{}); err != nil {
-				logger.Error(err, "Failed to create the AttributeType table")
-				return ctrl.Result{}, err
-			}
-		}
-		if !db.Migrator().HasTable(persistence.InventoryType{}) {
-			if err := db.Migrator().CreateTable(persistence.InventoryType{}); err != nil {
-				logger.Error(err, "Failed to create the InventoryType table")
-				return ctrl.Result{}, err
-			}
-		}
-		if !db.Migrator().HasTable(persistence.AchievementType{}) {
-			if err := db.Migrator().CreateTable(persistence.AchievementType{}); err != nil {
-				logger.Error(err, "Failed to create the AchievementType table")
-				return ctrl.Result{}, err
-			}
-		}
+	db, err := getGameDB(ctx, r.Client, &game)
+	if err != nil {
+		logger.Error(err, "Failed to get database connection")
+		return ctrl.Result{}, err
+	}
 
-		if !db.Migrator().HasTable(persistence.AvatarInstance{}) {
-			if err := db.Migrator().CreateTable(persistence.AvatarInstance{}); err != nil {
-				logger.Error(err, "Failed to create the AvatarInstance table")
-				return ctrl.Result{}, err
-			}
-		}
-		if !db.Migrator().HasTable(persistence.AvatarInstanceAttribute{}) {
-			if err := db.Migrator().CreateTable(persistence.AvatarInstanceAttribute{}); err != nil {
-				logger.Error(err, "Failed to create the AvatarInstanceAttribute table")
-				return ctrl.Result{}, err
-			}
-		}
-		if !db.Migrator().HasTable(persistence.AvatarInstanceInventoryItem{}) {
-			if err := db.Migrator().CreateTable(persistence.AvatarInstanceInventoryItem{}); err != nil {
-				logger.Error(err, "Failed to create the AvatarInstanceInventoryItem table")
-				return ctrl.Result{}, err
-			}
-		}
-		if !db.Migrator().HasTable(persistence.AvatarInstanceAchievement{}) {
-			if err := db.Migrator().CreateTable(persistence.AvatarInstanceAchievement{}); err != nil {
-				logger.Error(err, "Failed to create the AvatarInstanceAchievement table")
-				return ctrl.Result{}, err
-			}
-		}
+	if err := persistence.RunMigrations(db, persistence.AvatarModels()...); err != nil {
+		logger.Error(err, "Failed to run avatar migrations")
+		return ctrl.Result{}, err
+	}
 
-		avatarRecord := &persistence.AvatarType{
-			Name:        avatar.Name,
-			Game:        avatar.Spec.Game,
-			Type:        avatar.Spec.Type,
-			Description: avatar.Spec.Description,
-		}
+	avatarRecord := &persistence.AvatarType{
+		Name:        avatar.Name,
+		Game:        avatar.Spec.Game,
+		Type:        avatar.Spec.Type,
+		Description: avatar.Spec.Description,
+	}
 
-		if result := db.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "name"}},
-			DoNothing: true,
-		}).Create(avatarRecord); result.Error != nil {
-			logger.Error(result.Error, "Failed to insert the record into the AvatarType table")
+	if result := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "name"}},
+		DoNothing: true,
+	}).Create(avatarRecord); result.Error != nil {
+		logger.Error(result.Error, "Failed to insert the record into the AvatarType table")
+		return ctrl.Result{}, result.Error
+	}
+
+	for _, at := range avatar.Spec.AttributeTypes {
+		record := &persistence.AttributeType{
+			AvatarName: avatar.Name,
+			Name:       at.Name,
+			ValueType:  at.ValueType,
+		}
+		if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(record); result.Error != nil {
+			logger.Error(result.Error, "Failed to insert attribute type record")
 			return ctrl.Result{}, result.Error
 		}
+	}
 
-		for _, at := range avatar.Spec.AttributeTypes {
-			record := &persistence.AttributeType{
-				AvatarName: avatar.Name,
-				Name:       at.Name,
-				ValueType:  at.ValueType,
-			}
-			if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(record); result.Error != nil {
-				logger.Error(result.Error, "Failed to insert attribute type record")
-				return ctrl.Result{}, result.Error
-			}
+	for _, it := range avatar.Spec.InventoryTypes {
+		record := &persistence.InventoryType{
+			AvatarName: avatar.Name,
+			Name:       it.Name,
+			Category:   it.Category,
 		}
-
-		for _, it := range avatar.Spec.InventoryTypes {
-			record := &persistence.InventoryType{
-				AvatarName: avatar.Name,
-				Name:       it.Name,
-				Category:   it.Category,
-			}
-			if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(record); result.Error != nil {
-				logger.Error(result.Error, "Failed to insert inventory type record")
-				return ctrl.Result{}, result.Error
-			}
+		if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(record); result.Error != nil {
+			logger.Error(result.Error, "Failed to insert inventory type record")
+			return ctrl.Result{}, result.Error
 		}
+	}
 
-		for _, ach := range avatar.Spec.AchievementTypes {
-			record := &persistence.AchievementType{
-				AvatarName:  avatar.Name,
-				Name:        ach.Name,
-				Description: ach.Description,
-			}
-			if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(record); result.Error != nil {
-				logger.Error(result.Error, "Failed to insert achievement type record")
-				return ctrl.Result{}, result.Error
-			}
+	for _, ach := range avatar.Spec.AchievementTypes {
+		record := &persistence.AchievementType{
+			AvatarName:  avatar.Name,
+			Name:        ach.Name,
+			Description: ach.Description,
+		}
+		if result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(record); result.Error != nil {
+			logger.Error(result.Error, "Failed to insert achievement type record")
+			return ctrl.Result{}, result.Error
 		}
 	}
 
