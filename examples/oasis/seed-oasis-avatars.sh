@@ -3,7 +3,7 @@
 # Seed script for OASIS avatar instances
 # Loads the famous characters from Ready Player One via the KubeGame API
 #
-# Usage: ./hack/scripts/seed-oasis-avatars.sh [API_URL] [NAMESPACE]
+# Usage: ./examples/oasis/seed-oasis-avatars.sh [API_URL] [NAMESPACE]
 # Default API_URL: http://localhost:8082
 # Default NAMESPACE: default
 

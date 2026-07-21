@@ -130,20 +130,20 @@ make run
 ### Create a Game
 
 ```bash
-kubectl apply -f hack/resources/oasis.yaml
-kubectl apply -f hack/resources/oasis-avatar.yaml
-kubectl apply -f hack/resources/incipio.yaml
-kubectl apply -f hack/resources/archaide.yaml
-kubectl apply -f hack/resources/chthonia.yaml
-kubectl apply -f hack/resources/middle-earth.yaml
-kubectl apply -f hack/resources/oasis-areas.yaml
-kubectl apply -f hack/resources/oasis-items.yaml
+kubectl apply -f examples/oasis/oasis.yaml
+kubectl apply -f examples/oasis/oasis-avatar.yaml
+kubectl apply -f examples/oasis/incipio.yaml
+kubectl apply -f examples/oasis/archaide.yaml
+kubectl apply -f examples/oasis/chthonia.yaml
+kubectl apply -f examples/oasis/middle-earth.yaml
+kubectl apply -f examples/oasis/oasis-areas.yaml
+kubectl apply -f examples/oasis/oasis-items.yaml
 ```
 
 ### Seed Avatar Instances
 
 ```bash
-./hack/scripts/seed-oasis-avatars.sh
+./examples/oasis/seed-oasis-avatars.sh
 ```
 
 This loads 8 Ready Player One characters (Parzival, Art3mis, Aech, Daito, Shoto, Anorak, i-r0k, IOI-655321) via the API.
