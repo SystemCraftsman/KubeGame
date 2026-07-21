@@ -92,6 +92,64 @@ spec:
       effects:
         - attribute: "armorClass"
           modifier: "+18"
+    - name: "Black Tiger Sword"
+      category: "Equipment"
+      rarity: "Rare"
+      stackable: false
+      effects:
+        - attribute: "strength"
+          modifier: "+10"
+    - name: "Robes of Anorak"
+      category: "Equipment"
+      rarity: "Legendary"
+      stackable: false
+      effects:
+        - attribute: "intelligence"
+          modifier: "+40"
+        - attribute: "armorClass"
+          modifier: "+25"
+    # Transport
+    - name: "DeLorean"
+      category: "Transport"
+      rarity: "Legendary"
+      stackable: false
+    - name: "Leopardon"
+      category: "Transport"
+      rarity: "Epic"
+      stackable: false
+    - name: "Akira Motorcycle"
+      category: "Transport"
+      rarity: "Rare"
+      stackable: false
+    - name: "Iron Giant"
+      category: "Transport"
+      rarity: "Legendary"
+      stackable: false
+    - name: "Ultraman"
+      category: "Transport"
+      rarity: "Epic"
+      stackable: false
+    - name: "Raideen"
+      category: "Transport"
+      rarity: "Epic"
+      stackable: false
+    - name: "MechaGodzilla"
+      category: "Transport"
+      rarity: "Legendary"
+      stackable: false
+    # Currency
+    - name: "Quarter"
+      category: "Currency"
+      rarity: "Legendary"
+      stackable: false
+    - name: "Unlimited Coins"
+      category: "Currency"
+      rarity: "Legendary"
+      stackable: false
+    - name: "Corporate Funds"
+      category: "Currency"
+      rarity: "Rare"
+      stackable: false
     # Vanity Items
     - name: "Holographic Cape"
       category: "Vanity"

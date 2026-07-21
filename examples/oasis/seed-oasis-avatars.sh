@@ -10,14 +10,15 @@
 API_URL="${1:-http://localhost:8082}"
 NAMESPACE="${2:-default}"
 GAME="oasis"
-ENDPOINT="${API_URL}/api/v1/namespaces/${NAMESPACE}/games/${GAME}/avatars"
+BASE="${API_URL}/api/v1/namespaces/${NAMESPACE}/games/${GAME}"
+AVATARS="${BASE}/avatars"
 
 create_avatar() {
   local name="$1"
   local data="$2"
 
   echo "Creating avatar instance: ${name}..."
-  response=$(curl -s -w "\n%{http_code}" -X POST "${ENDPOINT}" \
+  response=$(curl -s -w "\n%{http_code}" -X POST "${AVATARS}" \
     -H "Content-Type: application/json" \
     -d "${data}")
 
@@ -31,9 +32,44 @@ create_avatar() {
   fi
 }
 
+grant_item() {
+  local avatar="$1"
+  local item="$2"
+  local qty="${3:-1}"
+
+  response=$(curl -s -w "\n%{http_code}" -X POST "${AVATARS}/${avatar}/inventory" \
+    -H "Content-Type: application/json" \
+    -d "{\"itemName\": \"${item}\", \"quantity\": ${qty}}")
+
+  http_code=$(echo "${response}" | tail -1)
+
+  if [ "${http_code}" -eq 200 ]; then
+    echo "  Granted: ${item} x${qty}"
+  else
+    echo "  FAILED grant ${item} (${http_code})"
+  fi
+}
+
+equip_item() {
+  local avatar="$1"
+  local item="$2"
+
+  response=$(curl -s -w "\n%{http_code}" -X POST "${AVATARS}/${avatar}/equip" \
+    -H "Content-Type: application/json" \
+    -d "{\"itemName\": \"${item}\"}")
+
+  http_code=$(echo "${response}" | tail -1)
+
+  if [ "${http_code}" -eq 200 ]; then
+    echo "  Equipped: ${item}"
+  else
+    echo "  FAILED equip ${item} (${http_code})"
+  fi
+}
+
 echo "============================================"
 echo " OASIS Avatar Seed - Ready Player One"
-echo " API: ${ENDPOINT}"
+echo " API: ${AVATARS}"
 echo "============================================"
 echo ""
 
@@ -52,16 +88,16 @@ create_avatar "parzival" '{
     "level": "10",
     "charisma": "60"
   },
-  "inventory": [
-    {"name": "Zemeckis Cube", "type": "Special", "quantity": 1},
-    {"name": "DeLorean", "type": "Transport", "quantity": 1},
-    {"name": "Leopardon", "type": "Transport", "quantity": 1},
-    {"name": "Sword of the Ba Heer", "type": "Equipment", "quantity": 1},
-    {"name": "Quarter", "type": "Currency", "quantity": 1}
-  ],
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Gunter"}
 }'
+grant_item "parzival" "Zemeckis Cube"
+grant_item "parzival" "DeLorean"
+grant_item "parzival" "Leopardon"
+grant_item "parzival" "Sword of the Ba Heer"
+grant_item "parzival" "Quarter"
+equip_item "parzival" "Sword of the Ba Heer"
+echo ""
 
 # Art3mis (Samantha Cook)
 # Famous gunter and blogger, found all keys
@@ -78,14 +114,15 @@ create_avatar "art3mis" '{
     "level": "10",
     "charisma": "75"
   },
-  "inventory": [
-    {"name": "Akira Motorcycle", "type": "Transport", "quantity": 1},
-    {"name": "Black Tiger Sword", "type": "Equipment", "quantity": 1},
-    {"name": "Scale Mail", "type": "Equipment", "quantity": 1}
-  ],
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Human", "Gender": "Female", "Class": "Gunter"}
 }'
+grant_item "art3mis" "Akira Motorcycle"
+grant_item "art3mis" "Black Tiger Sword"
+grant_item "art3mis" "Scale Mail"
+equip_item "art3mis" "Black Tiger Sword"
+equip_item "art3mis" "Scale Mail"
+echo ""
 
 # Aech (Helen Harris)
 # Skilled warrior and vehicle builder
@@ -102,14 +139,15 @@ create_avatar "aech" '{
     "level": "9",
     "charisma": "65"
   },
-  "inventory": [
-    {"name": "Iron Giant", "type": "Transport", "quantity": 1},
-    {"name": "Battleaxe", "type": "Equipment", "quantity": 1},
-    {"name": "Heavy Plate Armor", "type": "Equipment", "quantity": 1}
-  ],
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Orc", "Gender": "Male", "Class": "Warrior"}
 }'
+grant_item "aech" "Iron Giant"
+grant_item "aech" "Battleaxe"
+grant_item "aech" "Heavy Plate Armor"
+equip_item "aech" "Battleaxe"
+equip_item "aech" "Heavy Plate Armor"
+echo ""
 
 # Daito (Toshiro Yoshiaki)
 # Japanese gunter, samurai warrior
@@ -126,14 +164,15 @@ create_avatar "daito" '{
     "level": "8",
     "charisma": "45"
   },
-  "inventory": [
-    {"name": "Ultraman", "type": "Transport", "quantity": 1},
-    {"name": "Masamune Katana", "type": "Equipment", "quantity": 1},
-    {"name": "Samurai Yoroi", "type": "Equipment", "quantity": 1}
-  ],
   "achievements": ["Copper Key", "Jade Key", "Crystal Key"],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Warrior"}
 }'
+grant_item "daito" "Ultraman"
+grant_item "daito" "Masamune Katana"
+grant_item "daito" "Samurai Yoroi"
+equip_item "daito" "Masamune Katana"
+equip_item "daito" "Samurai Yoroi"
+echo ""
 
 # Shoto (Akihide Karatsu)
 # Daito's partner, skilled young samurai
@@ -150,14 +189,15 @@ create_avatar "shoto" '{
     "level": "8",
     "charisma": "55"
   },
-  "inventory": [
-    {"name": "Raideen", "type": "Transport", "quantity": 1},
-    {"name": "Wakizashi", "type": "Equipment", "quantity": 1},
-    {"name": "Ninja Garb", "type": "Equipment", "quantity": 1}
-  ],
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Rogue"}
 }'
+grant_item "shoto" "Raideen"
+grant_item "shoto" "Wakizashi"
+grant_item "shoto" "Ninja Garb"
+equip_item "shoto" "Wakizashi"
+equip_item "shoto" "Ninja Garb"
+echo ""
 
 # Anorak (James Halliday)
 # Creator of the OASIS, all-powerful wizard avatar
@@ -174,14 +214,14 @@ create_avatar "anorak" '{
     "level": "99",
     "charisma": "30"
   },
-  "inventory": [
-    {"name": "Robes of Anorak", "type": "Equipment", "quantity": 1},
-    {"name": "Catalyst", "type": "Special", "quantity": 1},
-    {"name": "Unlimited Coins", "type": "Currency", "quantity": 999999}
-  ],
   "achievements": ["Copper Key", "Jade Key", "Crystal Key", "Easter Egg"],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Mage"}
 }'
+grant_item "anorak" "Robes of Anorak"
+grant_item "anorak" "Catalyst"
+grant_item "anorak" "Unlimited Coins"
+equip_item "anorak" "Robes of Anorak"
+echo ""
 
 # i-r0k
 # Mercenary and bounty hunter, works for IOI
@@ -198,14 +238,15 @@ create_avatar "i-r0k" '{
     "level": "7",
     "charisma": "25"
   },
-  "inventory": [
-    {"name": "Orb of Osuvox", "type": "Special", "quantity": 1},
-    {"name": "Skull Armor", "type": "Equipment", "quantity": 1},
-    {"name": "Plasma Rifle", "type": "Equipment", "quantity": 1}
-  ],
   "achievements": [],
   "customizations": {"Race": "Android", "Gender": "Male", "Class": "Rogue"}
 }'
+grant_item "i-r0k" "Orb of Osuvox"
+grant_item "i-r0k" "Skull Armor"
+grant_item "i-r0k" "Plasma Rifle"
+equip_item "i-r0k" "Skull Armor"
+equip_item "i-r0k" "Plasma Rifle"
+echo ""
 
 # Sorrento / IOI-655321
 # Head of IOI operations, the main antagonist
@@ -222,19 +263,19 @@ create_avatar "ioi-655321" '{
     "level": "7",
     "charisma": "20"
   },
-  "inventory": [
-    {"name": "MechaGodzilla", "type": "Transport", "quantity": 1},
-    {"name": "IOI Corporate Armor", "type": "Equipment", "quantity": 1},
-    {"name": "IOI Railgun", "type": "Equipment", "quantity": 1},
-    {"name": "Corporate Funds", "type": "Currency", "quantity": 500000}
-  ],
   "achievements": [],
   "customizations": {"Race": "Human", "Gender": "Male", "Class": "Warrior"}
 }'
-
+grant_item "ioi-655321" "MechaGodzilla"
+grant_item "ioi-655321" "IOI Corporate Armor"
+grant_item "ioi-655321" "IOI Railgun"
+grant_item "ioi-655321" "Corporate Funds"
+equip_item "ioi-655321" "IOI Corporate Armor"
+equip_item "ioi-655321" "IOI Railgun"
 echo ""
+
 echo "============================================"
 echo " Seed complete!"
 echo "============================================"
 echo ""
-echo "Verify with: curl -s ${ENDPOINT} | python3 -m json.tool"
+echo "Verify with: curl -s ${AVATARS} | python3 -m json.tool"
