@@ -50,6 +50,15 @@ var _ = Describe("CurrencyController", func() {
 		}, timeout, interval).Should(BeTrue())
 	})
 
+	AfterEach(func() {
+		if currency != nil {
+			_ = k8sClient.Delete(ctx, currency)
+			currency = nil
+		}
+		Expect(k8sClient.Delete(ctx, game)).To(Succeed())
+		Expect(k8sClient.Delete(ctx, secret)).To(Succeed())
+	})
+
 	It("should add finalizer and game label", func() {
 		currency = &kubegamev1alpha1.Currency{
 			ObjectMeta: metav1.ObjectMeta{

@@ -56,19 +56,10 @@ func (r *AvatarReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	var game v1alpha1.Game
-	if err := r.Get(ctx, types.NamespacedName{Name: avatar.Spec.Game, Namespace: avatar.Namespace}, &game); err != nil {
-		if errors.IsNotFound(err) {
-			logger.Info("Game resource not found, might be deleted")
-			return ctrl.Result{}, nil
-		}
-		logger.Error(err, "Failed to get Game resource")
-		return ctrl.Result{}, err
-	}
-
 	if !avatar.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(&avatar, avatarFinalizer) {
-			if game.Status.Ready {
+			var game v1alpha1.Game
+			if err := r.Get(ctx, types.NamespacedName{Name: avatar.Spec.Game, Namespace: avatar.Namespace}, &game); err == nil && game.Status.Ready {
 				db, err := getGameDB(ctx, r.Client, &game)
 				if err == nil {
 					db.Where("avatar_name = ?", avatar.Name).Delete(&persistence.CustomizationOption{})
@@ -87,6 +78,16 @@ func (r *AvatarReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+
+	var game v1alpha1.Game
+	if err := r.Get(ctx, types.NamespacedName{Name: avatar.Spec.Game, Namespace: avatar.Namespace}, &game); err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("Game resource not found, might be deleted")
+			return ctrl.Result{}, nil
+		}
+		logger.Error(err, "Failed to get Game resource")
+		return ctrl.Result{}, err
 	}
 
 	if !controllerutil.ContainsFinalizer(&avatar, avatarFinalizer) {

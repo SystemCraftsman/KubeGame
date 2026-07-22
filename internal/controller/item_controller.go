@@ -54,18 +54,10 @@ func (r *ItemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	var game v1alpha1.Game
-	if err := r.Get(ctx, types.NamespacedName{Name: item.Spec.Game, Namespace: item.Namespace}, &game); err != nil {
-		if errors.IsNotFound(err) {
-			logger.Info("Game resource not found", "game", item.Spec.Game)
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
-	}
-
 	if !item.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(&item, itemFinalizer) {
-			if game.Status.Ready {
+			var game v1alpha1.Game
+			if err := r.Get(ctx, types.NamespacedName{Name: item.Spec.Game, Namespace: item.Namespace}, &game); err == nil && game.Status.Ready {
 				db, err := getGameDB(ctx, r.Client, &game)
 				if err == nil {
 					db.Where("item_name = ? AND game = ?", item.Name, item.Spec.Game).Delete(&persistence.ItemEffectRecord{})
@@ -80,6 +72,15 @@ func (r *ItemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+
+	var game v1alpha1.Game
+	if err := r.Get(ctx, types.NamespacedName{Name: item.Spec.Game, Namespace: item.Namespace}, &game); err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("Game resource not found", "game", item.Spec.Game)
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
 	}
 
 	if !controllerutil.ContainsFinalizer(&item, itemFinalizer) {

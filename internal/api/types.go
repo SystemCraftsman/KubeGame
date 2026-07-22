@@ -4,7 +4,7 @@ type InventoryItem struct {
 	Name     string `json:"name"`
 	Type     string `json:"type"`
 	Quantity int    `json:"quantity"`
-	Equipped bool   `json:"equipped,omitempty"`
+	Equipped bool   `json:"equipped"`
 }
 
 type AvatarInstanceRequest struct {

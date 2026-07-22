@@ -54,18 +54,10 @@ func (r *CurrencyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	var game v1alpha1.Game
-	if err := r.Get(ctx, types.NamespacedName{Name: currency.Spec.Game, Namespace: currency.Namespace}, &game); err != nil {
-		if errors.IsNotFound(err) {
-			logger.Info("Game resource not found", "game", currency.Spec.Game)
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
-	}
-
 	if !currency.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(&currency, currencyFinalizer) {
-			if game.Status.Ready {
+			var game v1alpha1.Game
+			if err := r.Get(ctx, types.NamespacedName{Name: currency.Spec.Game, Namespace: currency.Namespace}, &game); err == nil && game.Status.Ready {
 				db, err := getGameDB(ctx, r.Client, &game)
 				if err == nil {
 					db.Where("name = ? AND game = ?", currency.Name, currency.Spec.Game).Delete(&persistence.CurrencyDefinition{})
@@ -79,6 +71,15 @@ func (r *CurrencyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+
+	var game v1alpha1.Game
+	if err := r.Get(ctx, types.NamespacedName{Name: currency.Spec.Game, Namespace: currency.Namespace}, &game); err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("Game resource not found", "game", currency.Spec.Game)
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
 	}
 
 	if !controllerutil.ContainsFinalizer(&currency, currencyFinalizer) {
